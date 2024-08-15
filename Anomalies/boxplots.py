@@ -10,7 +10,6 @@ DATA = ['Mortality',
         'Group Quarters', 'Limited English Ability', 'Minority Status', 'Mobile Homes', 
         'Multi-Unit Structures', 'No High School Diploma', 'No Vehicle', 
         'Single-Parent Household', 'Unemployed']
-# THRESHOLD = 2
 
 def construct_data_df():
     data_df = pd.DataFrame()
@@ -50,12 +49,12 @@ def boxplots(data_df, year):
     for feature in DATA:
         if feature != 'Mortality':
             hot_means[feature] = data_df.loc[data_df['County Category'] == 'Hot', f'{year} {feature} Rates'].mean()
+            # .mean() calculates the mean of all the values in that column for the filtered rows
 
     # Sort features based on 'Hot' means
     sorted_features = sorted(hot_means, key=hot_means.get, reverse=True)
 
-    # Define the order and colors of the boxplot categories
-    category_order = ['Hot', 'Cold', 'Other']
+    # Define the colors of the boxplot categories
     category_colors = {'Hot': 'red', 'Cold': 'blue', 'Other': 'green'}
 
     # Determine the number of rows and columns needed for subplots
@@ -64,7 +63,7 @@ def boxplots(data_df, year):
     num_rows = (num_features + num_cols - 1) // num_cols
 
     # Initialize subplots
-    fig, axs = plt.subplots(num_rows, num_cols, figsize=(20, num_rows * 7))  # Increased figure size for better spacing
+    fig, axs = plt.subplots(num_rows, num_cols, figsize=(20, num_rows * 7))
 
     # Flatten the axes array for easy indexing
     axs = axs.flatten()
