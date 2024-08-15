@@ -52,10 +52,10 @@ def optimize_xgb(xgb_model, features, targets):
     param_grid = {
         'n_estimators': [100, 300, 500, 700, 900, 1100],
         'max_depth': [3, 4, 5, 7, 9, 11],
-        'learning_rate': [0.001, 0.01, 0.1, 0.2, 0.3],
+        'learning_rate': [0.001, 0.01, 0.1, 0.2],
         'subsample': [0.7, 0.8, 0.9],  # Subsample ratio of the training instances
         'colsample_bytree': [0.7, 0.8, 0.9],  # Subsample ratio of columns when constructing each tree
-        'gamma': [0, 0.1, 0.2, 0.3]  # Minimum loss reduction required to make a further partition on a leaf node
+        'gamma': [0, 0.1, 0.2]  # Minimum loss reduction required to make a further partition on a leaf node
     }
 
     # Initialize the GridSearchCV with MAE as the scoring metric
