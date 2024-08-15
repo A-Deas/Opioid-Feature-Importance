@@ -1,9 +1,9 @@
-import numpy as np
+import logging
 import pandas as pd
 import geopandas as gpd
 
-# Dictionary of categories with plain English descriptions
-cats = {
+# Constants
+VARIABLES = {
     'EPL_POV': 'Below Poverty',
     'EPL_UNEMP': 'Unemployed',
     'EPL_NOHSDP': 'No High School Diploma',
@@ -17,24 +17,24 @@ cats = {
     'EPL_MOBILE': 'Mobile Homes',
     'EPL_CROWD': 'Crowding',
     'EPL_NOVEH': 'No Vehicle',
-    'EPL_GROUPQ': 'Group Quarters',
-    'RPL_THEME1': 'Theme 1',
-    'RPL_THEME2': 'Theme 2',
-    'RPL_THEME3': 'Theme 3',
-    'RPL_THEME4': 'Theme 4',
-    'RPL_THEMES': 'Overall Summary',
+    'EPL_GROUPQ': 'Group Quarters'
 }
+SHAPE_PATH = '2020 USA County Shapefile/Filtered Files/2020_filtered_shapefile.shp'
+DATA_2014_PATH = 'Data/Dirty/SVI_2014_US_county.csv'
+DATA_2016_PATH = 'Data/Dirty/SVI_2016_US_county.csv'
+DATA_2018_PATH = 'Data/Dirty/SVI_2018_US_county.csv'
+DATA_2020_PATH = 'Data/Dirty/SVI_2020_US_county.csv'
+MISSING_DATA_VALUE = -9
 
-# Constants
-SHAPE_PATH = '/Users/deas/Documents/Research/2020 USA County Shapefile/FIPS_usa.shp'
-DATA_2014_PATH = 'Dirty Data/SVI_2014_US_county.csv'
-DATA_2016_PATH = 'Dirty Data/SVI_2016_US_county.csv'
-DATA_2018_PATH = 'Dirty Data/SVI_2018_US_county.csv'
-DATA_2020_PATH = 'Dirty Data/SVI_2020_US_county.csv'
+log_file = 'Log Files/svi_cleaning.log'
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%H:%M:%S', handlers=[
+    logging.FileHandler(log_file, mode='w'),  # Overwrite the log file
+    logging.StreamHandler()
+])
 
 def get_output_path(category):
-    plain_english_category = cats.get(category, 'Unspecified Category')
-    output_path = f'Clean Data/SVI {plain_english_category} rates.csv'
+    plain_english_category = VARIABLES.get(category, 'Unspecified Category')
+    output_path = f'Data/Clean/{plain_english_category}_rates.csv'
     return output_path
 
 def construct_new_dataframe(data_2014_path, data_2016_path, data_2018_path, data_2020_path, category):
@@ -90,40 +90,31 @@ def fix_fips(shape, new_dataframe, category):
     new_dataframe = new_dataframe[new_dataframe['FIPS'].isin(shape['FIPS'])] # Remove codes that do not exist in the shape
     dropped_fips_codes = new_dataframe[~new_dataframe['FIPS'].isin(shape['FIPS'])]
     dropped_fips_codes_list = dropped_fips_codes['FIPS'].tolist()
-    print(f'The counties in the data which are no longer present in the 2020 county structure of the United States are: {dropped_fips_codes_list}.')
+    logging.info(f'Counties in {category} but not in shape (excess data): {dropped_fips_codes_list}.')
 
     missing_fips = shape[~shape['FIPS'].isin(new_dataframe['FIPS'])]['FIPS'] # Codes present in shape but not in new_dataframe
     missing_fips_list = missing_fips.to_list()
-    print(f'The new counties in the 2020 county structure of the United states (which therefore must be added to the data) are: {missing_fips_list}.\n')
+    logging.info(f'Counties in shape but not in {category} (missing data): {missing_fips_list}.\n')
     
-    missing_rows = { 'FIPS': missing_fips } # key = 'FIPS', value = pandas series with the missing fips codes
+    # Create a DataFrame with missing FIPS codes and fill all year-category columns with the missing_data_value
+    missing_df = pd.DataFrame({
+        'FIPS': missing_fips
+    })
+    
     for yr in range(2014, 2021):
-        missing_rows[f'{yr} {category}'] = 0 # adds a NEW key for every year with corresponding value = 0
-    """   For my own learning, here is the result of the dictionary: 
-        { 'FIPS': pandas.Series([...]),  # Series of missing FIPS codes
-          '2014 {category}': 0,
-          '2015 {category}': 0,
-          ...
-          '2020 {category}': 0 } 
-    """
+        missing_df[f'{yr} {category}'] = MISSING_DATA_VALUE
+    logging.info(f'Missing dataframe for {category}:')
+    logging.info(missing_df)
 
-    missing_df = pd.DataFrame(missing_rows) # converts keys to column names and values associated with each key become the data in the corresponding column
-    """ For my own learning, here is the result of the conversion to a datafram: 
-       indices | 'FIPS' | '2014 {category}' | '2015 {category}' | ... | '2020 {category}'
-            0  | Fips_1 |       0           |       0           | ... |         0       
-            1  | Fips_2 |       0           |       0           | ... |         0                   
-            2  | Fips_3 |       0           |       0           | ... |         0       
-            ...
-    """
-    
-    new_dataframe = pd.concat([new_dataframe, missing_df], ignore_index=True, sort=False).sort_values('FIPS')
+    new_dataframe = pd.concat([new_dataframe, missing_df], ignore_index=True, sort=False)
+    new_dataframe = new_dataframe.sort_values(by='FIPS').reset_index(drop=True)
     return new_dataframe
 
 def save_new_dataframe(new_dataframe, output_path):
     new_dataframe.to_csv(output_path, index=False)
 
 def main():
-    for category, _ in cats.items():
+    for category, _ in VARIABLES.items():
         output_path = get_output_path(category)
         new_dataframe = construct_new_dataframe(DATA_2014_PATH, DATA_2016_PATH, DATA_2018_PATH, DATA_2020_PATH, category)
         shape = load_shapefile(SHAPE_PATH)
@@ -132,5 +123,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

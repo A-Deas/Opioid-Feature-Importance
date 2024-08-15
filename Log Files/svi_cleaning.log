@@ -1,0 +1,154 @@
+12:41:20 Counties in EPL_POV but not in shape (excess data): [].
+12:41:20 Counties in shape but not in EPL_POV (missing data): ['02063', '02066', '02158', '46102'].
+
+12:41:20 Missing dataframe for EPL_POV:
+12:41:20        FIPS  2014 EPL_POV  2015 EPL_POV  ...  2018 EPL_POV  2019 EPL_POV  2020 EPL_POV
+72    02063            -9            -9  ...            -9            -9            -9
+73    02066            -9            -9  ...            -9            -9            -9
+83    02158            -9            -9  ...            -9            -9            -9
+2413  46102            -9            -9  ...            -9            -9            -9
+
+[4 rows x 8 columns]
+12:41:20 Counties in EPL_UNEMP but not in shape (excess data): [].
+12:41:20 Counties in shape but not in EPL_UNEMP (missing data): ['02063', '02066', '02158', '46102'].
+
+12:41:20 Missing dataframe for EPL_UNEMP:
+12:41:20        FIPS  2014 EPL_UNEMP  2015 EPL_UNEMP  ...  2018 EPL_UNEMP  2019 EPL_UNEMP  2020 EPL_UNEMP
+72    02063              -9              -9  ...              -9              -9              -9
+73    02066              -9              -9  ...              -9              -9              -9
+83    02158              -9              -9  ...              -9              -9              -9
+2413  46102              -9              -9  ...              -9              -9              -9
+
+[4 rows x 8 columns]
+12:41:21 Counties in EPL_NOHSDP but not in shape (excess data): [].
+12:41:21 Counties in shape but not in EPL_NOHSDP (missing data): ['02063', '02066', '02158', '46102'].
+
+12:41:21 Missing dataframe for EPL_NOHSDP:
+12:41:21        FIPS  2014 EPL_NOHSDP  2015 EPL_NOHSDP  ...  2018 EPL_NOHSDP  2019 EPL_NOHSDP  2020 EPL_NOHSDP
+72    02063               -9               -9  ...               -9               -9               -9
+73    02066               -9               -9  ...               -9               -9               -9
+83    02158               -9               -9  ...               -9               -9               -9
+2413  46102               -9               -9  ...               -9               -9               -9
+
+[4 rows x 8 columns]
+12:41:22 Counties in EPL_AGE65 but not in shape (excess data): [].
+12:41:22 Counties in shape but not in EPL_AGE65 (missing data): ['02063', '02066', '02158', '46102'].
+
+12:41:22 Missing dataframe for EPL_AGE65:
+12:41:22        FIPS  2014 EPL_AGE65  2015 EPL_AGE65  ...  2018 EPL_AGE65  2019 EPL_AGE65  2020 EPL_AGE65
+72    02063              -9              -9  ...              -9              -9              -9
+73    02066              -9              -9  ...              -9              -9              -9
+83    02158              -9              -9  ...              -9              -9              -9
+2413  46102              -9              -9  ...              -9              -9              -9
+
+[4 rows x 8 columns]
+12:41:23 Counties in EPL_AGE17 but not in shape (excess data): [].
+12:41:23 Counties in shape but not in EPL_AGE17 (missing data): ['02063', '02066', '02158', '46102'].
+
+12:41:23 Missing dataframe for EPL_AGE17:
+12:41:23        FIPS  2014 EPL_AGE17  2015 EPL_AGE17  ...  2018 EPL_AGE17  2019 EPL_AGE17  2020 EPL_AGE17
+72    02063              -9              -9  ...              -9              -9              -9
+73    02066              -9              -9  ...              -9              -9              -9
+83    02158              -9              -9  ...              -9              -9              -9
+2413  46102              -9              -9  ...              -9              -9              -9
+
+[4 rows x 8 columns]
+12:41:24 Counties in EPL_DISABL but not in shape (excess data): [].
+12:41:24 Counties in shape but not in EPL_DISABL (missing data): ['02063', '02066', '02158', '46102'].
+
+12:41:24 Missing dataframe for EPL_DISABL:
+12:41:24        FIPS  2014 EPL_DISABL  2015 EPL_DISABL  ...  2018 EPL_DISABL  2019 EPL_DISABL  2020 EPL_DISABL
+72    02063               -9               -9  ...               -9               -9               -9
+73    02066               -9               -9  ...               -9               -9               -9
+83    02158               -9               -9  ...               -9               -9               -9
+2413  46102               -9               -9  ...               -9               -9               -9
+
+[4 rows x 8 columns]
+12:41:25 Counties in EPL_SNGPNT but not in shape (excess data): [].
+12:41:25 Counties in shape but not in EPL_SNGPNT (missing data): ['02063', '02066', '02158', '46102'].
+
+12:41:25 Missing dataframe for EPL_SNGPNT:
+12:41:25        FIPS  2014 EPL_SNGPNT  2015 EPL_SNGPNT  ...  2018 EPL_SNGPNT  2019 EPL_SNGPNT  2020 EPL_SNGPNT
+72    02063               -9               -9  ...               -9               -9               -9
+73    02066               -9               -9  ...               -9               -9               -9
+83    02158               -9               -9  ...               -9               -9               -9
+2413  46102               -9               -9  ...               -9               -9               -9
+
+[4 rows x 8 columns]
+12:41:26 Counties in EPL_MINRTY but not in shape (excess data): [].
+12:41:26 Counties in shape but not in EPL_MINRTY (missing data): ['02063', '02066', '02158', '46102'].
+
+12:41:26 Missing dataframe for EPL_MINRTY:
+12:41:26        FIPS  2014 EPL_MINRTY  2015 EPL_MINRTY  ...  2018 EPL_MINRTY  2019 EPL_MINRTY  2020 EPL_MINRTY
+72    02063               -9               -9  ...               -9               -9               -9
+73    02066               -9               -9  ...               -9               -9               -9
+83    02158               -9               -9  ...               -9               -9               -9
+2413  46102               -9               -9  ...               -9               -9               -9
+
+[4 rows x 8 columns]
+12:41:27 Counties in EPL_LIMENG but not in shape (excess data): [].
+12:41:27 Counties in shape but not in EPL_LIMENG (missing data): ['02063', '02066', '02158', '46102'].
+
+12:41:27 Missing dataframe for EPL_LIMENG:
+12:41:27        FIPS  2014 EPL_LIMENG  2015 EPL_LIMENG  ...  2018 EPL_LIMENG  2019 EPL_LIMENG  2020 EPL_LIMENG
+72    02063               -9               -9  ...               -9               -9               -9
+73    02066               -9               -9  ...               -9               -9               -9
+83    02158               -9               -9  ...               -9               -9               -9
+2413  46102               -9               -9  ...               -9               -9               -9
+
+[4 rows x 8 columns]
+12:41:28 Counties in EPL_MUNIT but not in shape (excess data): [].
+12:41:28 Counties in shape but not in EPL_MUNIT (missing data): ['02063', '02066', '02158', '46102'].
+
+12:41:28 Missing dataframe for EPL_MUNIT:
+12:41:28        FIPS  2014 EPL_MUNIT  2015 EPL_MUNIT  ...  2018 EPL_MUNIT  2019 EPL_MUNIT  2020 EPL_MUNIT
+72    02063              -9              -9  ...              -9              -9              -9
+73    02066              -9              -9  ...              -9              -9              -9
+83    02158              -9              -9  ...              -9              -9              -9
+2413  46102              -9              -9  ...              -9              -9              -9
+
+[4 rows x 8 columns]
+12:41:29 Counties in EPL_MOBILE but not in shape (excess data): [].
+12:41:29 Counties in shape but not in EPL_MOBILE (missing data): ['02063', '02066', '02158', '46102'].
+
+12:41:29 Missing dataframe for EPL_MOBILE:
+12:41:29        FIPS  2014 EPL_MOBILE  2015 EPL_MOBILE  ...  2018 EPL_MOBILE  2019 EPL_MOBILE  2020 EPL_MOBILE
+72    02063               -9               -9  ...               -9               -9               -9
+73    02066               -9               -9  ...               -9               -9               -9
+83    02158               -9               -9  ...               -9               -9               -9
+2413  46102               -9               -9  ...               -9               -9               -9
+
+[4 rows x 8 columns]
+12:41:30 Counties in EPL_CROWD but not in shape (excess data): [].
+12:41:30 Counties in shape but not in EPL_CROWD (missing data): ['02063', '02066', '02158', '46102'].
+
+12:41:30 Missing dataframe for EPL_CROWD:
+12:41:30        FIPS  2014 EPL_CROWD  2015 EPL_CROWD  ...  2018 EPL_CROWD  2019 EPL_CROWD  2020 EPL_CROWD
+72    02063              -9              -9  ...              -9              -9              -9
+73    02066              -9              -9  ...              -9              -9              -9
+83    02158              -9              -9  ...              -9              -9              -9
+2413  46102              -9              -9  ...              -9              -9              -9
+
+[4 rows x 8 columns]
+12:41:31 Counties in EPL_NOVEH but not in shape (excess data): [].
+12:41:31 Counties in shape but not in EPL_NOVEH (missing data): ['02063', '02066', '02158', '46102'].
+
+12:41:31 Missing dataframe for EPL_NOVEH:
+12:41:31        FIPS  2014 EPL_NOVEH  2015 EPL_NOVEH  ...  2018 EPL_NOVEH  2019 EPL_NOVEH  2020 EPL_NOVEH
+72    02063              -9              -9  ...              -9              -9              -9
+73    02066              -9              -9  ...              -9              -9              -9
+83    02158              -9              -9  ...              -9              -9              -9
+2413  46102              -9              -9  ...              -9              -9              -9
+
+[4 rows x 8 columns]
+12:41:32 Counties in EPL_GROUPQ but not in shape (excess data): [].
+12:41:32 Counties in shape but not in EPL_GROUPQ (missing data): ['02063', '02066', '02158', '46102'].
+
+12:41:32 Missing dataframe for EPL_GROUPQ:
+12:41:32        FIPS  2014 EPL_GROUPQ  2015 EPL_GROUPQ  ...  2018 EPL_GROUPQ  2019 EPL_GROUPQ  2020 EPL_GROUPQ
+72    02063               -9               -9  ...               -9               -9               -9
+73    02066               -9               -9  ...               -9               -9               -9
+83    02158               -9               -9  ...               -9               -9               -9
+2413  46102               -9               -9  ...               -9               -9               -9
+
+[4 rows x 8 columns]
