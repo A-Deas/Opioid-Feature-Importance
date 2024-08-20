@@ -49,45 +49,40 @@ def boxplots(data_df, year):
     for feature in DATA:
         if feature != 'Mortality':
             hot_means[feature] = data_df.loc[data_df['County Category'] == 'Hot', f'{year} {feature} Rates'].mean()
-            # .mean() calculates the mean of all the values in that column for the filtered rows
 
-    # Sort features based on 'Hot' means
-    sorted_features = sorted(hot_means, key=hot_means.get, reverse=True)
-
-    # Define the colors of the boxplot categories
-    category_colors = {'Hot': 'red', 'Cold': 'blue', 'Other': 'green'}
-
-    # Determine the number of rows and columns needed for subplots
-    num_features = len(sorted_features)
-    num_cols = 7
-    num_rows = (num_features + num_cols - 1) // num_cols
-
-    # Initialize subplots
-    fig, axs = plt.subplots(num_rows, num_cols, figsize=(20, num_rows * 7))
-
-    # Flatten the axes array for easy indexing
-    axs = axs.flatten()
-
-    # Create a boxplot for each feature
-    for idx, feature in enumerate(sorted_features):
-        sns.boxplot(x='County Category', y=f'{year} {feature} Rates', data=data_df, 
-                    hue='County Category', palette=category_colors, ax=axs[idx],
-                    whis=[0, 100], dodge=False)
-        axs[idx].set_title(f'Boxplot for {feature}')
-        axs[idx].set_ylabel(f'Rates')
-
-    # Hide any extra subplots if the number of features is not a multiple of num_cols
-    for idx in range(num_features, len(axs)):
-        axs[idx].axis('off')
-
-    plt.tight_layout()
-    plt.savefig(f'Anomalies/Boxplots/{year}_boxplots.png', bbox_inches='tight')
-    plt.close()
+    return hot_means
 
 def main():
+    means_by_year = {}
+    data_df = construct_data_df()
+
     for year in range(2014, 2021):
-        data_df = construct_data_df()
-        boxplots(data_df, year)
+        hot_means = boxplots(data_df, year)
+        means_by_year[year] = hot_means
+
+    # Convert the collected means to a DataFrame
+    means_df = pd.DataFrame(means_by_year)
+
+    # Calculate the average mean across all years for each variable
+    means_df['Average'] = means_df.mean(axis=1)
+
+    # Sort the DataFrame by the average mean
+    means_df = means_df.sort_values(by='Average', ascending=True)
+
+    # Use the 'Set1' colormap, which has distinct colors
+    colors = plt.cm.tab10.colors[:len(means_df.columns)-1]  # Select colors for the years
+    colors = list(colors) + ['black']  # Add black for the 'Average' column
+
+    # Plot the means over the years
+    ax = means_df.plot(kind='barh', figsize=(12, 8), legend=True, color=colors)
+
+    plt.title('Mean Values of SVI Variable Rates in Hot Counties Over the Years')
+    plt.xlabel('Mean Value')
+    plt.ylabel('Variable')
+    plt.legend(title='Year', bbox_to_anchor=(1, 0), loc='lower right')
+    plt.tight_layout()
+    plt.savefig('Anomalies/Boxplots/mean_values_plot.png', bbox_inches='tight')
+    plt.close()
 
 if __name__ == "__main__":
     main()
