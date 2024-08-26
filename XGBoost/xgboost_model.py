@@ -108,7 +108,6 @@ def plot_feature_importance(feature_importance_df):
             plt.barh(positions[i], feature_importance_df[year], height=bar_width, label=str(year))
 
     # Add xticks on the middle of the group bars
-    plt.ylabel('Features', fontweight='bold')
     plt.xlabel('Feature Importance (Gain)', fontweight='bold')
     plt.title('XGBoost Feature Importance', fontweight='bold')
     plt.yticks(r + bar_width, feature_importance_df.index)

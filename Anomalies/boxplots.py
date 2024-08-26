@@ -76,9 +76,8 @@ def main():
     # Plot the means over the years
     ax = means_df.plot(kind='barh', figsize=(12, 8), legend=True, color=colors)
 
-    plt.title('Mean Values of SVI Variable Rates in Hot Counties Over the Years', fontweight='bold')
+    plt.title('Mean Value in Hot Counties', fontweight='bold')
     plt.xlabel('Mean Value', fontweight='bold')
-    plt.ylabel('Variable', fontweight='bold')
     plt.legend(title='Year', bbox_to_anchor=(1, 0), loc='lower right')
     plt.tight_layout()
     plt.savefig('Feature Importance/anomaly_investigation_plot.png', bbox_inches='tight')
