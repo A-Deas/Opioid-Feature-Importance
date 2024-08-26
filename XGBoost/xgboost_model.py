@@ -3,8 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
 import xgboost as xgb
-# import warnings
-# warnings.filterwarnings('ignore', category=UserWarning)
 
 # Constants
 OPTIMIZED_XGBOOST = xgb.XGBRegressor(
