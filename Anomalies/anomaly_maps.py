@@ -8,8 +8,13 @@ from scipy.stats import lognorm
 
 # Constants
 SHAPE_PATH = '2020 USA County Shapefile/Filtered Files/2020_filtered_shapefile.shp'
-MORTALITY_PATH = 'Clean Data/mortality_rates.csv'
-MORTALITY_NAMES = ['FIPS'] + [f'{year} MR' for year in range(2014, 2021)]
+MORTALITY_PATH = 'Data/Clean/Mortality_rates.csv'
+MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality' for year in range(2014, 2021)]
+TAIL = 3
+
+def construct_output_map_path(year):
+    output_map_path = f'Anomalies/Anomaly Maps/{TAIL}% Tails/{year}_{TAIL}%_tail_anomaly_map'
+    return output_map_path
 
 def load_shapefile(shapefile_path):
     shape = gpd.read_file(shapefile_path)
@@ -26,9 +31,9 @@ def load_mort_rates():
 def merge_data_shape(shape, mort_df):
     return shape.merge(mort_df, on='FIPS')
 
-def construct_anomaly_map(shape, year):
+def construct_anomaly_map(shape, year, output_map_path):
     fig, main_ax = plt.subplots(figsize=(10, 5))
-    title = f'Anomaly Map for the Mortality Rates in {year}'
+    title = f'{year} Anomaly Map for the Mortality Rates: {TAIL}% Tails'
     plt.title(title, size=16, weight='bold')
 
         # Alaska and Hawaii insets
@@ -52,18 +57,19 @@ def construct_anomaly_map(shape, year):
         (shape[shape['STATEFP'] == '15'], hawaii_ax, 'hawaii') ]
 
     # Color the maps
-    mort_rates = shape[f'{year} MR'].values
+    mort_rates = shape[f'{year} Mortality'].values
     non_zero_mort_rates = mort_rates[mort_rates > 0]
     params_lognorm = lognorm.fit(non_zero_mort_rates)
     shape, loc, scale = params_lognorm
 
-    upper_threshold = lognorm.ppf(.99, shape, loc, scale)
-    lower_threshold = lognorm.ppf(.01, shape, loc, scale)
+    tail = TAIL / 100
+    upper_threshold = lognorm.ppf(1-tail, shape, loc, scale)
+    lower_threshold = lognorm.ppf(tail, shape, loc, scale)
 
     for inset, ax, _ in shapes:
         for _, row in inset.iterrows():
             county = row['FIPS']
-            rate = row[f'{year} MR']
+            rate = row[f'{year} Mortality']
             
             if rate < 0: # missing data
                 color = 'black'
@@ -82,8 +88,7 @@ def construct_anomaly_map(shape, year):
     # Add the colorbar
     add_legend(main_ax)
 
-    plt.savefig(f'Anomalies/Anomaly Maps/{year}_anomaly_map', 
-                bbox_inches=None, pad_inches=0, dpi=300)
+    plt.savefig(output_map_path, bbox_inches=None, pad_inches=0, dpi=300)
     # plt.show()
     plt.close(fig)
 
@@ -105,10 +110,11 @@ def add_legend(main_ax):
 
 def main():
     for year in range(2014, 2021):
+        output_map_path = construct_output_map_path(year)
         shape = load_shapefile(SHAPE_PATH)
         mort_df = load_mort_rates()
         shape = merge_data_shape(shape, mort_df)
-        construct_anomaly_map(shape, year)
+        construct_anomaly_map(shape, year, output_map_path)
         print(f'Plot printed for {year}.')
 
 if __name__ == "__main__":

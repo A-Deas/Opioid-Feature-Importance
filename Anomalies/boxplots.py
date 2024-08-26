@@ -81,7 +81,7 @@ def main():
     plt.ylabel('Variable')
     plt.legend(title='Year', bbox_to_anchor=(1, 0), loc='lower right')
     plt.tight_layout()
-    plt.savefig('Anomalies/Boxplots/mean_values_plot.png', bbox_inches='tight')
+    plt.savefig('Feature Importance/anomaly_investigation_plot.png', bbox_inches='tight')
     plt.close()
 
 if __name__ == "__main__":
