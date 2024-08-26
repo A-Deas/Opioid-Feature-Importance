@@ -8,8 +8,8 @@ import xgboost as xgb
 
 # Constants
 OPTIMIZED_XGBOOST = xgb.XGBRegressor(
-    colsample_bytree=0.9,
-    gamma=0,
+    colsample_bytree=0.8,
+    gamma=0.2,
     learning_rate=0.1,
     max_depth=5,
     n_estimators=100,
@@ -117,8 +117,8 @@ def plot_feature_importance(feature_importance_df):
     # Create legend & Show graphic
     plt.legend()
     plt.tight_layout()
-    # plt.savefig('/home/p5d/volume1/NN_Practice/XGBoost/cumulative XGBoost feature importances.png')
-    plt.show()
+    plt.savefig('Feature Importance/xgboost_feature_importance.png')
+    # plt.show()
     plt.close()
 
 def main():
