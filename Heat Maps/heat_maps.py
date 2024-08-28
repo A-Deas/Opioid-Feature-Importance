@@ -1,0 +1,177 @@
+import geopandas as gpd
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.colors import BoundaryNorm
+from matplotlib.cm import ScalarMappable
+import warnings
+from scipy.stats import lognorm
+warnings.filterwarnings("ignore")
+
+# Constants
+FACTOR_LIST = ['Mortality']
+
+def load_shapefile():
+    shape_path = f'2022 USA County Shapefile/Filtered Files/2022_filtered_shapefile.shp'
+    shape = gpd.read_file(shape_path)
+    shape['FIPS'] = shape['FIPS'].astype(str)
+    return shape
+
+def load_filtered_data(year):
+    data_path = f'Data/CDC Wonder/Filtered Files/{year}_mortality_filtered.csv'
+    data_names = ['FIPS', f'{year} Deaths', f'{year} Pop', f'{year} MR']
+    data_df = pd.read_csv(data_path, header=0, names=data_names)
+    data_df['FIPS'] = data_df['FIPS'].astype(str).apply(lambda x: x.zfill(5) if len(x) < 5 else x)
+    data_df[f'{year} MR'] = data_df[f'{year} MR'].astype(float)
+    data_df = data_df.sort_values(by='FIPS').reset_index(drop=True)
+    return data_df
+
+def load_final_data(year):
+    data_path = f'CDC Wonder/Final Files/{year}_mortality_final.csv'
+    data_names = ['FIPS', f'{year} MR']
+    data_df = pd.read_csv(data_path, header=0, names=data_names)
+    data_df['FIPS'] = data_df['FIPS'].astype(str).apply(lambda x: x.zfill(5) if len(x) < 5 else x)
+    data_df[f'{year} MR'] = data_df[f'{year} MR'].astype(float)
+    data_df = data_df.sort_values(by='FIPS').reset_index(drop=True)
+    return data_df
+
+def merge_data_shape(shape, data_df):
+    shape = shape.merge(data_df, on='FIPS')
+    return shape
+
+def plot_heat_map(shape, year):
+    fig, main_ax = plt.subplots(figsize=(10, 5))
+    title = f'{year} Heat Map for the CDC Wonder Rates'
+    plt.title(title, size=13, weight='bold')
+
+    # Alaska and Hawaii insets
+    alaska_ax = fig.add_axes([0, -0.5, 1.4, 1.4]) 
+    hawaii_ax = fig.add_axes([0.24, 0.1, 0.15, 0.15])  
+    
+    # Plot state boundaries
+    state_boundaries = shape.dissolve(by='STATEFP', as_index=False)
+    state_boundaries.boundary.plot(ax=main_ax, edgecolor='black', linewidth=.5)
+
+    alaska_state = state_boundaries[state_boundaries['STATEFP'] == '02']
+    alaska_state.boundary.plot(ax=alaska_ax, edgecolor='black', linewidth=.5)
+
+    hawaii_state = state_boundaries[state_boundaries['STATEFP'] == '15']
+    hawaii_state.boundary.plot(ax=hawaii_ax, edgecolor='black', linewidth=.5)
+
+    # Define the insets for coloring
+    shapes = [
+        (shape[(shape['STATEFP'] != '02') & (shape['STATEFP'] != '15')], main_ax, 'continental'),
+        (shape[shape['STATEFP'] == '02'], alaska_ax, 'alaska'),
+        (shape[shape['STATEFP'] == '15'], hawaii_ax, 'hawaii') ]
+
+    yearly_data = shape[f'{year} MR'].values
+    # yearly_data = yearly_data[yearly_data >= 0]
+
+    # Compute the empirical percentiles for each value
+    percentiles = np.percentile(yearly_data, np.arange(0, 101, 1))
+
+    # Color the maps
+    cmap = plt.get_cmap('RdYlBu_r')
+
+    for inset, ax, _ in shapes:
+        for _, row in inset.iterrows():
+            county = row['FIPS']
+            data_value = row[f'{year} MR']
+            
+            if data_value >= 0.0:
+                # Calculate the empirical percentile for the data_value
+                percentile_rank = np.sum(data_value > percentiles) / 100
+                
+                # Map the percentile (0 to 1) to a color
+                color = cmap(percentile_rank)
+            else:
+                color = 'black'  # For zero or negative values
+            
+            inset[inset['FIPS'] == county].plot(ax=ax, color=color)
+
+    # yearly_data = shape[f'{year} MR'].values
+    #     # I HAVE to fit the distributions to the ALL the data because in some years (2015 and 2017)
+    #     # there are significantly less 0 values and so if I fit to the nonzero values only,
+    #     # it completely destroys the fitted distribution and results in an incredibly overly red map
+    # # yearly_data = yearly_data[yearly_data >= 0]
+    # log_shape, log_loc, log_scale = lognorm.fit(yearly_data)
+    # print(log_shape, log_loc, log_scale)
+    # max_value = yearly_data.max()
+    # min_value = yearly_data.min()
+    # print(min_value)
+    # print(max_value)
+
+    # # Color the maps
+    # cmap = plt.get_cmap('RdYlBu_r')
+
+    # for inset, ax, _ in shapes:
+    #     for _, row in inset.iterrows():
+    #         county = row['FIPS']
+    #         data_value = row[f'{year} MR']
+            
+    #         if data_value >= 0.0:
+    #             # Calculate the percentile for the data_value using the fitted lognormal distribution
+    #             percentile = lognorm.ppf(data_value, log_shape, log_loc, log_scale)
+                
+    #             # Map the percentile (0 to 1) to a color
+    #             color = cmap(percentile)
+    #         else:
+    #             color = 'black'  # For zero or negative values
+            
+    #         inset[inset['FIPS'] == county].plot(ax=ax, color=color)
+
+    # Adjust the viewing
+    set_view_window(main_ax,alaska_ax,hawaii_ax)
+
+    # Add the colorbar
+    add_color_bar(main_ax)
+
+    # Display and save the map
+    output_map_path = f'Heat Maps/Mortality/{year}_mort_heat_map.png'
+    plt.savefig(output_map_path, bbox_inches=None, pad_inches=0, dpi=300)
+    # plt.show()
+    plt.close(fig)
+
+def set_view_window(main_ax,alaska_ax,hawaii_ax):
+    main_ax.get_xaxis().set_visible(False)
+    main_ax.get_yaxis().set_visible(False)
+    alaska_ax.set_axis_off()
+    hawaii_ax.set_axis_off()
+    main_ax.axis('off')
+
+    # Fix window
+    main_ax.set_xlim([-125, -65])
+    main_ax.set_ylim([25, 50])
+
+def add_color_bar(main_ax):
+    # Get the colormap
+    cmap = plt.get_cmap('RdYlBu_r')
+    
+    # Define color bounds and normalization
+    color_bounds = np.linspace(0, 1, 21)  # 21 points for 0%, 5%, ..., 100%
+    norm = BoundaryNorm(color_bounds, ncolors=cmap.N, clip=True)
+    
+    # Create the colorbar
+    cbar = plt.colorbar(ScalarMappable(cmap=cmap, norm=norm), ax=main_ax, orientation='vertical', fraction=0.046, pad=0.04)
+    
+    # Set tick positions and labels
+    tick_positions = np.linspace(0, 1, 21)  # 21 points for 0%, 5%, ..., 100%
+    cbar.set_ticks(tick_positions)
+    label_list = [f'{i}%' for i in range(0, 101, 5)]
+    cbar.set_ticklabels(label_list)
+    
+    # Customize the colorbar
+    cbar.ax.tick_params(axis='y', labelsize=8) 
+    cbar.set_label('Percentiles', fontsize=10, weight='bold')
+
+def main():
+    shape = load_shapefile()
+    for year in range(2010, 2023):
+        # data_df = load_filtered_data(year)
+        data_df = load_final_data(year)
+        shape = merge_data_shape(shape, data_df)
+        plot_heat_map(shape, year)
+        print(f'Plot printed for {year}.')
+
+if __name__ == "__main__":
+    main()
