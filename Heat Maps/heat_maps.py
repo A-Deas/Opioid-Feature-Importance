@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore")
 FACTOR_LIST = ['Mortality']
 
 def load_shapefile():
-    shape_path = f'2022 USA County Shapefile/Filtered Files/2022_filtered_shapefile.shp'
+    shape_path = '2022 USA County Shapefile/Filtered Files/2022_filtered_shapefile.shp'
     shape = gpd.read_file(shape_path)
     shape['FIPS'] = shape['FIPS'].astype(str)
     return shape

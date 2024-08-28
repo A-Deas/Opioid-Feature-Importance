@@ -19,11 +19,12 @@ VARIABLES = {
     'EPL_NOVEH': 'No Vehicle',
     'EPL_GROUPQ': 'Group Quarters'
 }
-SHAPE_PATH = '2020 USA County Shapefile/Filtered Files/2020_filtered_shapefile.shp'
-DATA_2014_PATH = 'Data/Dirty/SVI_2014_US_county.csv'
-DATA_2016_PATH = 'Data/Dirty/SVI_2016_US_county.csv'
-DATA_2018_PATH = 'Data/Dirty/SVI_2018_US_county.csv'
-DATA_2020_PATH = 'Data/Dirty/SVI_2020_US_county.csv'
+SHAPE_PATH = '2022 USA County Shapefile/Filtered Files/2022_filtered_shapefile.shp'
+DATA_2014_PATH = 'Data/Raw Files/SVI_2014_US_county.csv'
+DATA_2016_PATH = 'Data/Raw Files/SVI_2016_US_county.csv'
+DATA_2018_PATH = 'Data/Raw Files/SVI_2018_US_county.csv'
+DATA_2020_PATH = 'Data/Raw Files/SVI_2020_US_county.csv'
+DATA_2022_PATH = 'Data/Raw Files/SVI_2022_US_county.csv'
 MISSING_DATA_VALUE = -9
 
 log_file = 'Log Files/svi_cleaning.log'
@@ -34,15 +35,17 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s', datefm
 
 def get_output_path(category):
     plain_english_category = VARIABLES.get(category, 'Unspecified Category')
-    output_path = f'Data/Clean/{plain_english_category}_rates.csv'
+    output_path = f'Data/Clean Files/{plain_english_category}_rates.csv'
     return output_path
 
-def construct_new_dataframe(data_2014_path, data_2016_path, data_2018_path, data_2020_path, category):
+def construct_new_dataframe(data_2014_path, data_2016_path, data_2018_path, data_2020_path, data_2022_path, category):
     data_2014 = pd.read_csv(data_2014_path)
     data_2016 = pd.read_csv(data_2016_path)
     data_2018 = pd.read_csv(data_2018_path)
     data_2020 = pd.read_csv(data_2020_path)
-    data_2020.rename(columns={'EPL_POV150': 'EPL_POV'}, inplace=True) # Category name changed in 2020
+    data_2020.rename(columns={'EPL_POV150': 'EPL_POV'}, inplace=True) # Category name changed to POV150 in 2020
+    data_2022 = pd.read_csv(data_2022_path)
+    data_2022.rename(columns={'EPL_POV150': 'EPL_POV'}, inplace=True)
 
     # Construct the new dataframe to edit
     new_dataframe = data_2014[['FIPS', category]].copy()
@@ -61,16 +64,21 @@ def construct_new_dataframe(data_2014_path, data_2016_path, data_2018_path, data
     temp_df.rename(columns={category: f'2020 {category}'}, inplace=True)
     new_dataframe = pd.merge(new_dataframe, temp_df, on='FIPS', how='left')
 
+    temp_df = data_2022[['FIPS', category]].copy()
+    temp_df.rename(columns={category: f'2022 {category}'}, inplace=True)
+    new_dataframe = pd.merge(new_dataframe, temp_df, on='FIPS', how='left')
+
     # Fill in the rest of the dataframe with the synthetic data
     new_dataframe[f'2015 {category}'] = new_dataframe[f'2014 {category}'] + 0.5 * (new_dataframe[f'2016 {category}'] - new_dataframe[f'2014 {category}'])
     new_dataframe[f'2017 {category}'] = new_dataframe[f'2016 {category}'] + 0.5 * (new_dataframe[f'2018 {category}'] - new_dataframe[f'2016 {category}'])
     new_dataframe[f'2019 {category}'] = new_dataframe[f'2018 {category}'] + 0.5 * (new_dataframe[f'2020 {category}'] - new_dataframe[f'2018 {category}'])
+    new_dataframe[f'2021 {category}'] = new_dataframe[f'2020 {category}'] + 0.5 * (new_dataframe[f'2022 {category}'] - new_dataframe[f'2020 {category}'])
 
     # Multiply values by 100 so that our rates are now between 0 and 100 (not between 0 and 1)
     new_dataframe = new_dataframe.apply(lambda x: (x*100).round(2) if x.name != 'FIPS' else x)
 
     # Reorder the columns 
-    column_order = ['FIPS'] + [f'{year} {category}' for year in range(2014, 2021)]
+    column_order = ['FIPS'] + [f'{year} {category}' for year in range(2014, 2023)]
     new_dataframe = new_dataframe[column_order]
 
     # Add leading zeros to the FIPS codes
@@ -101,7 +109,7 @@ def fix_fips(shape, new_dataframe, category):
         'FIPS': missing_fips
     })
     
-    for yr in range(2014, 2021):
+    for yr in range(2014, 2023):
         missing_df[f'{yr} {category}'] = MISSING_DATA_VALUE
     logging.info(f'Missing dataframe for {category}:')
     logging.info(missing_df)
@@ -116,7 +124,7 @@ def save_new_dataframe(new_dataframe, output_path):
 def main():
     for category, _ in VARIABLES.items():
         output_path = get_output_path(category)
-        new_dataframe = construct_new_dataframe(DATA_2014_PATH, DATA_2016_PATH, DATA_2018_PATH, DATA_2020_PATH, category)
+        new_dataframe = construct_new_dataframe(DATA_2014_PATH, DATA_2016_PATH, DATA_2018_PATH, DATA_2020_PATH, DATA_2022_PATH, category)
         shape = load_shapefile(SHAPE_PATH)
         new_dataframe_fixed = fix_fips(shape, new_dataframe, category)
         save_new_dataframe(new_dataframe_fixed, output_path)
