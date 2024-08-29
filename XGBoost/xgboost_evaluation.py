@@ -2,23 +2,23 @@ import pandas as pd
 import numpy as np
 
 # Constants
-MORTALITY_PATH = 'Data/Clean/Mortality_rates.csv'
-MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality rates' for year in range(2014, 2021)]
+MORTALITY_PATH = 'Data/Mortality/Final Files/Mortality_final_rates.csv'
+MORTALITY_NAMES = ['FIPS'] + [f'{year} MR' for year in range(2010, 2023)]
 
 def load_mortality(mort_path, mort_names):
     mort_df = pd.read_csv(mort_path, header=0, names=mort_names)
-    mort_df['FIPS'] = mort_df['FIPS'].astype(str).apply(lambda x: x.zfill(5) if len(x) < 5 else x)
-    mort_df[mort_names[1:]] = mort_df[mort_names[1:]].astype(float).clip(lower=0)
+    mort_df['FIPS'] = mort_df['FIPS'].astype(str).str.zfill(5)
+    mort_df[mort_names[1:]] = mort_df[mort_names[1:]].astype(float)
     mort_df = mort_df.sort_values(by='FIPS').reset_index(drop=True)
     return mort_df
 
 def load_yearly_predictions():
     preds_df = pd.DataFrame()
-    for year in range(2015,2021):
+    for year in range(2011,2023):
         yearly_path = f'XGBoost/XGBoost Predictions/{year}_xgboost_predictions.csv'
         yearly_names = ['FIPS'] + [f'{year} Preds']
         yearly_df = pd.read_csv(yearly_path, header=0, names=yearly_names)
-        yearly_df['FIPS'] = yearly_df['FIPS'].astype(str).apply(lambda x: x.zfill(5) if len(x) < 5 else x)
+        yearly_df['FIPS'] = yearly_df['FIPS'].astype(str).str.zfill(5)
         yearly_df[f'{year} Preds'] = yearly_df[f'{year} Preds'].astype(float)
 
         if preds_df.empty:
@@ -34,13 +34,13 @@ def calculate_err_acc(mort_df, preds_df):
     metrics = {'Year': [], 'Avg Error': [], 'Max Error': [], 'Avg Accuracy': [], 
                'MSE': [], 'R2': [], 'MedAE': []}
 
-    for year in range(2015, 2021):
-        absolute_errors = abs(preds_df[f'{year} Preds'] - mort_df[f'{year} Mortality rates'])
+    for year in range(2011, 2023):
+        absolute_errors = abs(preds_df[f'{year} Preds'] - mort_df[f'{year} MR'])
         acc_df[f'{year} Absolute Errors'] = absolute_errors
         avg_err = np.mean(absolute_errors)
         max_err = absolute_errors.max()
         mse = np.mean(absolute_errors ** 2)
-        r2 = 1 - (np.sum((mort_df[f'{year} Mortality rates'] - preds_df[f'{year} Preds']) ** 2) / np.sum((mort_df[f'{year} Mortality rates'] - np.mean(mort_df[f'{year} Mortality rates'])) ** 2))
+        r2 = 1 - (np.sum((mort_df[f'{year} MR'] - preds_df[f'{year} Preds']) ** 2) / np.sum((mort_df[f'{year} MR'] - np.mean(mort_df[f'{year} MR'])) ** 2))
         medae = np.median(absolute_errors)
 
         # Adjusting accuracy calculation

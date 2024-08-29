@@ -5,6 +5,7 @@ from sklearn.model_selection import KFold
 import xgboost as xgb
 
 # Constants
+NUM_YEARS = len(range(2010,2023))
 OPTIMIZED_XGBOOST = xgb.XGBRegressor(
     colsample_bytree=0.8,
     gamma=0.2,
@@ -15,7 +16,8 @@ OPTIMIZED_XGBOOST = xgb.XGBRegressor(
     random_state=42)
 KF = KFold(n_splits=5, shuffle=True, random_state=42)
 DATA = ['Mortality',
-        'Aged 17 or Younger', 'Aged 65 or Older', 'Below Poverty', 'Crowding', 'Disability', 
+        'Aged 17 or Younger', 'Aged 65 or Older', 'Below Poverty', 'Crowding', 
+        # 'Disability', 
         'Group Quarters', 'Limited English Ability', 'Minority Status', 'Mobile Homes', 
         'Multi-Unit Structures', 'No High School Diploma', 'No Vehicle', 
         'Single-Parent Household', 'Unemployed']
@@ -23,10 +25,14 @@ DATA = ['Mortality',
 def construct_data_df():
     data_df = pd.DataFrame()
     for variable in DATA:
-        variable_path = f'Data/Clean/{variable}_rates.csv'
-        variable_names = ['FIPS'] + [f'{year} {variable} Rates' for year in range(2014, 2021)]
+        if variable == 'Mortality':
+            variable_path = f'Data/Mortality/Final Files/{variable}_final_rates.csv'
+        else:
+            variable_path = f'Data/SVI/Final Files/{variable}_final_rates.csv'
+
+        variable_names = ['FIPS'] + [f'{year} {variable} Rates' for year in range(2010, 2023)]
         variable_df = pd.read_csv(variable_path, header=0, names=variable_names)
-        variable_df['FIPS'] = variable_df['FIPS'].astype(str).apply(lambda x: x.zfill(5) if len(x) < 5 else x)
+        variable_df['FIPS'] = variable_df['FIPS'].astype(str).str.zfill(5)
         variable_df[variable_names[1:]] = variable_df[variable_names[1:]].astype(float)
 
         if data_df.empty:
@@ -119,18 +125,18 @@ def plot_feature_importance(feature_importance_df):
     plt.close()
 
 def main():
-    yearly_importance_dict = {yr: [] for yr in range(2015, 2021)}
+    yearly_importance_dict = {yr: [] for yr in range(2011, 2023)}
     num_features = len(DATA) - 1
     total_importance = np.zeros(num_features)
     data_df = construct_data_df()
     fips_codes = strip_fips(data_df)
-    for year in range(2015, 2021): # We start predicting for 2015, not 2014
+    for year in range(2011, 2023): # We start predicting for 2011, not 2010
         features, targets = features_targets(data_df, year)
         feature_importances, xgb_predictions, test_fips = run_xgboost(features, targets, fips_codes)
         save_predictions(year, xgb_predictions, test_fips)
         yearly_importance_dict[year] = feature_importances.tolist()
         total_importance = update_total_importance(feature_importances, total_importance)
-    total_importance = total_importance / 6
+    total_importance = total_importance / NUM_YEARS
 
     # Final overall importance plot
     feature_names = [feature for feature in DATA if feature != 'Mortality']
