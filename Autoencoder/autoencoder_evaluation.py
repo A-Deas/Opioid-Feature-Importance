@@ -7,15 +7,15 @@ import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 
 # Constants
-MORTALITY_PATH = 'Data/Clean/Mortality_rates.csv'
-MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality rates' for year in range(2014, 2021)]
-PREDICTIONS_PATH = 'Autoencoder/Autoencoder Predictions/Mortality Rates/autoencoder_predictions.csv'
-PREDICTIONS_NAMES = [f'{year} Preds' for year in range(2015, 2021)]
+MORTALITY_PATH = 'Data/Mortality/Final Files/Mortality_final_rates.csv'
+MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality Rates' for year in range(2010, 2023)]
+PREDICTIONS_PATH = 'Autoencoder/Predictions/ae_mortality_predictions.csv'
+PREDICTIONS_NAMES = [f'{year} Preds' for year in range(2011, 2023)]
 
 def load_mortality(mort_path, mort_names):
     mort_df = pd.read_csv(mort_path, header=0, names=mort_names)
-    mort_df['FIPS'] = mort_df['FIPS'].astype(str).apply(lambda x: x.zfill(5) if len(x) < 5 else x)
-    mort_df[mort_names[1:]] = mort_df[mort_names[1:]].astype(float).clip(lower=0)
+    mort_df['FIPS'] = mort_df['FIPS'].astype(str).str.zfill(5)
+    mort_df[mort_names[1:]] = mort_df[mort_names[1:]].astype(float)
     mort_df = mort_df.sort_values(by='FIPS').reset_index(drop=True)
     return mort_df
 
@@ -27,7 +27,7 @@ def load_predictions(preds_path, preds_names):
     predicted_shapes = {}
     predicted_locs = {}
     predicted_scales = {}
-    start_year = 2015
+    start_year = 2011
 
     # Extract the last three rows (shape, location, scale)
     for i, col in enumerate(preds_names):
@@ -45,13 +45,13 @@ def calculate_err_acc(mort_df, preds_df):
     metrics = {'Year': [], 'Avg Error': [], 'Max Error': [], 'Avg Accuracy': [], 
                'MSE': [], 'R2': [], 'MedAE': []}
 
-    for year in range(2015, 2021):
-        absolute_errors = abs(preds_df[f'{year} Preds'] - mort_df[f'{year} Mortality rates'])
+    for year in range(2011, 2023):
+        absolute_errors = abs(preds_df[f'{year} Preds'] - mort_df[f'{year} Mortality Rates'])
         acc_df[f'{year} Absolute Errors'] = absolute_errors
         avg_err = np.mean(absolute_errors)
         max_err = absolute_errors.max()
         mse = np.mean(absolute_errors ** 2)
-        r2 = 1 - (np.sum((mort_df[f'{year} Mortality rates'] - preds_df[f'{year} Preds']) ** 2) / np.sum((mort_df[f'{year} Mortality rates'] - np.mean(mort_df[f'{year} Mortality rates'])) ** 2))
+        r2 = 1 - (np.sum((mort_df[f'{year} Mortality Rates'] - preds_df[f'{year} Preds']) ** 2) / np.sum((mort_df[f'{year} Mortality Rates'] - np.mean(mort_df[f'{year} Mortality Rates'])) ** 2))
         medae = np.median(absolute_errors)
 
         # Adjusting accuracy calculation
@@ -85,12 +85,12 @@ def wasserstein_distance_lognorm(shape1, loc1, scale1, shape2, loc2, scale2):
     return np.sqrt((mu1 - mu2)**2 + (sigma1 - sigma2)**2)
 
 def compare_distributions(mort_df, predicted_shapes, predicted_locs, predicted_scales):
-    for year in range(2015, 2021):
-        mort_rates = mort_df[f'{year} Mortality rates'].values
-        non_zero_mort_rates = mort_rates[mort_rates > 0]
+    for year in range(2011, 2023):
+        mort_rates = mort_df[f'{year} Mortality Rates'].values
+        mort_rates = mort_rates + 1e-5 # add a small values to avoid log(0) problems
 
         # Fit a log-normal distribution to the actual mortality rates
-        params_lognorm = lognorm.fit(non_zero_mort_rates, floc=0)
+        params_lognorm = lognorm.fit(mort_rates, floc=0)
         shape, loc, scale = params_lognorm
     
         predicted_shape = predicted_shapes[year]

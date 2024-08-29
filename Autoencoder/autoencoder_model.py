@@ -9,18 +9,18 @@ import random
 from scipy.stats import lognorm
 
 # Constants
-# FEATURES = ['Dispensing', 
-FEATURES = ['Aged 17 or Younger', 'Aged 65 or Older', 'Below Poverty', 'Crowding', 'Disability', 
+FEATURES = ['Aged 17 or Younger', 'Aged 65 or Older', 'Below Poverty', 'Crowding', 
+            # 'Disability', 
             'Group Quarters', 'Limited English Ability', 'Minority Status', 'Mobile Homes', 
             'Multi-Unit Structures', 'No High School Diploma', 'No Vehicle', 
             'Single-Parent Household', 'Unemployed']
 NUM_VARIABLES = len(FEATURES)
-MORTALITY_PATH = 'Data/Clean/Mortality_rates.csv'
-MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality rates' for year in range(2014, 2021)]
+MORTALITY_PATH = 'Data/Mortality/Final Files/Mortality_final_rates.csv'
+MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality Rates' for year in range(2010, 2023)]
 LOSS_FUNCTION = nn.L1Loss() # PyTorch's built-in loss function for MAE, measures the absolute difference between the predicted values and the actual values     
-YEARS = range(2014, 2020) # lag the predictor variables
-NUM_COUNTIES = 3143
-KFOLDS = 6  # Number of folds for cross-validation
+DATA_YEARS = range(2010, 2022) # Can't use data in 2022 as we are not making 2023 predictions
+NUM_COUNTIES = 3144
+KFOLDS = len(DATA_YEARS)  # Use as many folds as we have training years of data
 NUM_EPOCHS = 500
 PATIENCE = 5
 
@@ -40,19 +40,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s', datefm
 def construct_data_df():
     data_df = pd.DataFrame()
     for variable in FEATURES:
-        variable_path = f'Data/Clean/{variable}_rates.csv'
-        variable_names = ['FIPS'] + [f'{year} {variable} rates' for year in range(2014, 2021)]
+        variable_path = f'Data/SVI/Final Files/{variable}_final_rates.csv'
+        variable_names = ['FIPS'] + [f'{year} {variable} Rates' for year in range(2010, 2023)]
         variable_df = pd.read_csv(variable_path, header=0, names=variable_names)
-        variable_df['FIPS'] = variable_df['FIPS'].astype(str).apply(lambda x: x.zfill(5) if len(x) < 5 else x)
-        variable_df[variable_names[1:]] = variable_df[variable_names[1:]].astype(float).clip(lower=0)
-
-        # Normalize values for 'Dispensing' to be between 0 and 100
-        # if variable == 'Dispensing':
-        #     for year in range(2014, 2021):
-        #         col_name = f'{year} Dispensing rates'
-        #         min_val = variable_df[col_name].min()
-        #         max_val = variable_df[col_name].max()
-        #         variable_df[col_name] = 100 * (variable_df[col_name] - min_val) / (max_val - min_val)
+        variable_df['FIPS'] = variable_df['FIPS'].astype(str).str.zfill(5)
+        variable_df[variable_names[1:]] = variable_df[variable_names[1:]].astype(float)
 
         if data_df.empty:
             data_df = variable_df
@@ -64,13 +56,13 @@ def construct_data_df():
 
 def construct_mort_df(mort_path, mort_names):
     mort_df = pd.read_csv(mort_path, header=0, names=mort_names)
-    mort_df['FIPS'] = mort_df['FIPS'].astype(str).apply(lambda x: x.zfill(5) if len(x) < 5 else x)
-    mort_df[mort_names[1:]] = mort_df[mort_names[1:]].astype(float).clip(lower=0)
+    mort_df['FIPS'] = mort_df['FIPS'].astype(str).str.zfill(5)
+    mort_df[mort_names[1:]] = mort_df[mort_names[1:]].astype(float)
     mort_df = mort_df.sort_values(by='FIPS').reset_index(drop=True)
     return mort_df
 
 class Tensors(Dataset):
-    def __init__(self, data_df, mort_df, years=YEARS):
+    def __init__(self, data_df, mort_df, years=DATA_YEARS):
         self.data_df = data_df
         self.mort_df = mort_df
         self.years = years
@@ -83,15 +75,14 @@ class Tensors(Dataset):
         year = self.years[idx]
         variable_list = []
         for variable in FEATURES:
-            yearly_var_rates = self.data_df[f'{year} {variable} rates'].values
+            yearly_var_rates = self.data_df[f'{year} {variable} Rates'].values
             variable_list.append(yearly_var_rates)
         yearly_data_array = np.array(variable_list)
         yearly_data_tensor = torch.tensor(yearly_data_array, dtype=torch.float32)
 
-        mort_rates = self.mort_df[f'{year+1} Mortality rates'].values
-        non_zero_mort_rates = mort_rates[mort_rates > 0]
-
-        params_lognorm = lognorm.fit(non_zero_mort_rates)
+        mort_rates = self.mort_df[f'{year+1} Mortality Rates'].values
+        mort_rates = mort_rates + 1e-5 # add a small values to avoid log(0) problems
+        params_lognorm = lognorm.fit(mort_rates)
         shape, loc, scale = params_lognorm
         mort_rates = np.append(mort_rates, [shape, loc, scale])
 
@@ -188,9 +179,9 @@ def predict_mortality_rates(predictions_loader):
     model.eval()
     
     # Initialize an empty DataFrame with the desired column names
-    years = [f'{year+1} AE Predictions' for year in YEARS]
+    years = [f'{year+1} AE Preds' for year in DATA_YEARS]
     predictions_df = pd.DataFrame(columns=years)
-    year_counter = 2014
+    year_counter = 2010
     
     with torch.no_grad():
         for inputs, _ in predictions_loader:
@@ -199,69 +190,69 @@ def predict_mortality_rates(predictions_loader):
             outputs = model(inputs)
             outputs_np = outputs.numpy()  # Convert tensor to numpy array
             outputs_np = np.round(outputs_np, 2)
-            predictions_df[f'{year_counter} AE Predictions'] = outputs_np.flatten() # Place the column vector in the appropriate column of the DataFrame
+            predictions_df[f'{year_counter} AE Preds'] = outputs_np.flatten() # Place the column vector in the appropriate column of the DataFrame
 
     print(predictions_df.head())
     # Save to CSV
-    predictions_df.to_csv('Autoencoder/Autoencoder Predictions/Mortality Rates/autoencoder_predictions.csv', index=False)
+    predictions_df.to_csv('Autoencoder/Predictions/ae_mortality_predictions.csv', index=False)
     print("Predictions saved to CSV --------------------------------")
 
 def main():
     data_df = construct_data_df()
     mort_df = construct_mort_df(MORTALITY_PATH, MORTALITY_NAMES)
-    tensors = Tensors(data_df, mort_df, years=YEARS)
+    tensors = Tensors(data_df, mort_df, years=DATA_YEARS)
 
-    kf = KFold(n_splits=KFOLDS, shuffle=True, random_state=42)
+    # kf = KFold(n_splits=KFOLDS, shuffle=True, random_state=42)
 
-    best_fold_test_loss = float('inf')
-    best_fold = -1
-    best_train_indices = None
-    best_test_indices = None
-    best_model_state = None
+    # best_fold_test_loss = float('inf')
+    # best_fold = -1
+    # best_train_indices = None
+    # best_test_indices = None
+    # best_model_state = None
 
 
-    for fold, (train_indices, test_indices) in enumerate(kf.split(tensors)):
-        logging.info(f'Fold {fold + 1}/{KFOLDS}: --------------------------------\n')
+    # for fold, (train_indices, test_indices) in enumerate(kf.split(tensors)):
+    #     logging.info(f'Fold {fold + 1}/{KFOLDS}: --------------------------------\n')
 
-        train_set = Subset(tensors, train_indices)
-        test_set = Subset(tensors, test_indices)
+    #     train_set = Subset(tensors, train_indices)
+    #     test_set = Subset(tensors, test_indices)
 
-        train_loader = DataLoader(train_set, batch_size=1, shuffle=False, num_workers=0)
-        test_loader = DataLoader(test_set, batch_size=1, shuffle=False, num_workers=0)
+    #     train_loader = DataLoader(train_set, batch_size=1, shuffle=False, num_workers=0)
+    #     test_loader = DataLoader(test_set, batch_size=1, shuffle=False, num_workers=0)
 
-        # Train the model
-        logging.info("Training model --------------------------------\n")
-        model = Autoencoder_model()
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.00001) # initial LR, but will be adjusted by the scheduler
-        scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=0.00001, max_lr=.0001, step_size_up=10, mode='triangular2')
-        best_training_loss, best_fold_model_state = train_model(train_loader, model, LOSS_FUNCTION, optimizer, scheduler)
-        logging.info("Model training complete and saved --------------------------------\n")
+    #     # Train the model
+    #     logging.info("Training model --------------------------------\n")
+    #     model = Autoencoder_model()
+    #     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001) # initial LR, but will be adjusted by the scheduler
+    #     scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=0.00001, max_lr=.0001, step_size_up=10, mode='triangular2')
+    #     best_training_loss, best_fold_model_state = train_model(train_loader, model, LOSS_FUNCTION, optimizer, scheduler)
+    #     logging.info("Model training complete and saved --------------------------------\n")
 
-        # Test the model
-        logging.info("Testing model --------------------------------\n")
-        model = Autoencoder_model()
-        model.load_state_dict(best_fold_model_state)  # Load the best model state from this fold
-        test_loss = evaluate_model(test_loader, model, LOSS_FUNCTION)
-        logging.info(f"Test loss on 2020 reconstructions: {test_loss:.4f}")
-        logging.info("Model testing complete --------------------------------\n")
+    #     # Test the model
+    #     logging.info("Testing model --------------------------------\n")
+    #     model = Autoencoder_model()
+    #     model.load_state_dict(best_fold_model_state)  # Load the best model state from this fold
+    #     test_loss = evaluate_model(test_loader, model, LOSS_FUNCTION)
+    #     logging.info(f"Test loss on 2020 reconstructions: {test_loss:.4f}")
+    #     logging.info("Model testing complete --------------------------------\n")
 
-        # Check if this fold's model is the best one based on test loss
-        if test_loss < best_fold_test_loss:
-            best_fold_test_loss = test_loss
-            best_model_state = best_fold_model_state  # Save the best model state
-            best_fold = fold
-            best_train_indices = train_indices
-            best_test_indices = test_indices
-            torch.save(best_model_state, 'PyTorch Models/autoencoder_model.pth') # save the final version of the model
-            logging.info("Best model updated from this fold based on test loss.")
+    #     # Check if this fold's model is the best one based on test loss
+    #     if test_loss < best_fold_test_loss:
+    #         best_fold_test_loss = test_loss
+    #         best_model_state = best_fold_model_state  # Save the best model state
+    #         best_fold = fold
+    #         best_train_indices = train_indices
+    #         best_test_indices = test_indices
+    #         torch.save(best_model_state, 'PyTorch Models/autoencoder_model.pth') # save the final version of the model
+    #         logging.info("Best model updated from this fold based on test loss.")
             
-        logging.info("Model testing complete --------------------------------\n")
+    #     logging.info("Model testing complete --------------------------------\n")
 
-    # Log the best fold details
-    logging.info(f'Best Fold: {best_fold + 1}')
-    logging.info(f'Best Fold Training Indices: {best_train_indices}')
-    logging.info(f'Best Fold Testing Indices: {best_test_indices}')
-    logging.info(f'Best Fold Test Loss: {best_fold_test_loss}')
+    # # Log the best fold details
+    # logging.info(f'Best Fold: {best_fold + 1}')
+    # logging.info(f'Best Fold Training Indices: {best_train_indices}')
+    # logging.info(f'Best Fold Testing Indices: {best_test_indices}')
+    # logging.info(f'Best Fold Test Loss: {best_fold_test_loss}')
 
     predictions_loader = DataLoader(tensors, batch_size=1, shuffle=False, num_workers=0)
     predict_mortality_rates(predictions_loader)
