@@ -202,57 +202,57 @@ def main():
     mort_df = construct_mort_df(MORTALITY_PATH, MORTALITY_NAMES)
     tensors = Tensors(data_df, mort_df, years=DATA_YEARS)
 
-    # kf = KFold(n_splits=KFOLDS, shuffle=True, random_state=42)
+    kf = KFold(n_splits=KFOLDS, shuffle=True, random_state=42)
 
-    # best_fold_test_loss = float('inf')
-    # best_fold = -1
-    # best_train_indices = None
-    # best_test_indices = None
-    # best_model_state = None
+    best_fold_test_loss = float('inf')
+    best_fold = -1
+    best_train_indices = None
+    best_test_indices = None
+    best_model_state = None
 
 
-    # for fold, (train_indices, test_indices) in enumerate(kf.split(tensors)):
-    #     logging.info(f'Fold {fold + 1}/{KFOLDS}: --------------------------------\n')
+    for fold, (train_indices, test_indices) in enumerate(kf.split(tensors)):
+        logging.info(f'Fold {fold + 1}/{KFOLDS}: --------------------------------\n')
 
-    #     train_set = Subset(tensors, train_indices)
-    #     test_set = Subset(tensors, test_indices)
+        train_set = Subset(tensors, train_indices)
+        test_set = Subset(tensors, test_indices)
 
-    #     train_loader = DataLoader(train_set, batch_size=1, shuffle=False, num_workers=0)
-    #     test_loader = DataLoader(test_set, batch_size=1, shuffle=False, num_workers=0)
+        train_loader = DataLoader(train_set, batch_size=1, shuffle=False, num_workers=0)
+        test_loader = DataLoader(test_set, batch_size=1, shuffle=False, num_workers=0)
 
-    #     # Train the model
-    #     logging.info("Training model --------------------------------\n")
-    #     model = Autoencoder_model()
-    #     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001) # initial LR, but will be adjusted by the scheduler
-    #     scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=0.00001, max_lr=.0001, step_size_up=10, mode='triangular2')
-    #     best_training_loss, best_fold_model_state = train_model(train_loader, model, LOSS_FUNCTION, optimizer, scheduler)
-    #     logging.info("Model training complete and saved --------------------------------\n")
+        # Train the model
+        logging.info("Training model --------------------------------\n")
+        model = Autoencoder_model()
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.00001) # initial LR, but will be adjusted by the scheduler
+        scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=0.00001, max_lr=.0001, step_size_up=10, mode='triangular2')
+        best_training_loss, best_fold_model_state = train_model(train_loader, model, LOSS_FUNCTION, optimizer, scheduler)
+        logging.info("Model training complete and saved --------------------------------\n")
 
-    #     # Test the model
-    #     logging.info("Testing model --------------------------------\n")
-    #     model = Autoencoder_model()
-    #     model.load_state_dict(best_fold_model_state)  # Load the best model state from this fold
-    #     test_loss = evaluate_model(test_loader, model, LOSS_FUNCTION)
-    #     logging.info(f"Test loss on 2020 reconstructions: {test_loss:.4f}")
-    #     logging.info("Model testing complete --------------------------------\n")
+        # Test the model
+        logging.info("Testing model --------------------------------\n")
+        model = Autoencoder_model()
+        model.load_state_dict(best_fold_model_state)  # Load the best model state from this fold
+        test_loss = evaluate_model(test_loader, model, LOSS_FUNCTION)
+        logging.info(f"Test loss on 2020 reconstructions: {test_loss:.4f}")
+        logging.info("Model testing complete --------------------------------\n")
 
-    #     # Check if this fold's model is the best one based on test loss
-    #     if test_loss < best_fold_test_loss:
-    #         best_fold_test_loss = test_loss
-    #         best_model_state = best_fold_model_state  # Save the best model state
-    #         best_fold = fold
-    #         best_train_indices = train_indices
-    #         best_test_indices = test_indices
-    #         torch.save(best_model_state, 'PyTorch Models/autoencoder_model.pth') # save the final version of the model
-    #         logging.info("Best model updated from this fold based on test loss.")
+        # Check if this fold's model is the best one based on test loss
+        if test_loss < best_fold_test_loss:
+            best_fold_test_loss = test_loss
+            best_model_state = best_fold_model_state  # Save the best model state
+            best_fold = fold
+            best_train_indices = train_indices
+            best_test_indices = test_indices
+            torch.save(best_model_state, 'PyTorch Models/autoencoder_model.pth') # save the final version of the model
+            logging.info("Best model updated from this fold based on test loss.")
             
-    #     logging.info("Model testing complete --------------------------------\n")
+        logging.info("Model testing complete --------------------------------\n")
 
-    # # Log the best fold details
-    # logging.info(f'Best Fold: {best_fold + 1}')
-    # logging.info(f'Best Fold Training Indices: {best_train_indices}')
-    # logging.info(f'Best Fold Testing Indices: {best_test_indices}')
-    # logging.info(f'Best Fold Test Loss: {best_fold_test_loss}')
+    # Log the best fold details
+    logging.info(f'Best Fold: {best_fold + 1}')
+    logging.info(f'Best Fold Training Indices: {best_train_indices}')
+    logging.info(f'Best Fold Testing Indices: {best_test_indices}')
+    logging.info(f'Best Fold Test Loss: {best_fold_test_loss}')
 
     predictions_loader = DataLoader(tensors, batch_size=1, shuffle=False, num_workers=0)
     predict_mortality_rates(predictions_loader)
