@@ -10,48 +10,35 @@ from scipy.stats import lognorm
 import warnings
 
 # Constants
-# FEATURES = ['Dispensing', 
-FEATURES = ['Aged 17 or Younger', 'Aged 65 or Older', 'Below Poverty', 'Crowding', 'Disability', 
+FEATURES = ['Aged 17 or Younger', 'Aged 65 or Older', 'Below Poverty', 'Crowding', 
+            # 'Disability', 
             'Group Quarters', 'Limited English Ability', 'Minority Status', 'Mobile Homes', 
             'Multi-Unit Structures', 'No High School Diploma', 'No Vehicle', 
             'Single-Parent Household', 'Unemployed']
 NUM_VARIABLES = len(FEATURES)
-MORTALITY_PATH = 'Data/Clean/Mortality_rates.csv'
-MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality rates' for year in range(2014, 2021)]
+MORTALITY_PATH = 'Data/Mortality/Final Files/Mortality_final_rates.csv'
+MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality Rates' for year in range(2010, 2023)]
 LOSS_FUNCTION = nn.L1Loss() # PyTorch's built-in loss function for MAE, measures the absolute difference between the predicted values and the actual values     
-YEARS = range(2014, 2020) # lag the predictor variables
-NUM_COUNTIES = 3143
-KFOLDS = 6  # Number of folds for cross-validation
+DATA_YEARS = range(2010, 2022) # Can't use data in 2022 as we are not making 2023 predictions
+NUM_COUNTIES = 3144
+KFOLDS = len(DATA_YEARS)  # Use as many folds as we have training years of data
 NUM_EPOCHS = 500
-PATIENCE = 5
+PATIENCE = 10
 
-# # Set random seeds for reproducibility
-# """ I don't think I need these because I'm not training or testing the model,
-#     I am just loading up then running the already saved model! """
+# Set random seeds for reproducibility
 # seed = 42
 # random.seed(seed)
 # np.random.seed(seed)
 # torch.manual_seed(seed)
-# if torch.cuda.is_available():
-#     torch.cuda.manual_seed(seed)
-#     torch.cuda.manual_seed_all(seed)
 
 def construct_data_df():
     data_df = pd.DataFrame()
     for variable in FEATURES:
-        variable_path = f'Data/Clean/{variable}_rates.csv'
-        variable_names = ['FIPS'] + [f'{year} {variable} rates' for year in range(2014, 2021)]
+        variable_path = f'Data/SVI/Final Files/{variable}_final_rates.csv'
+        variable_names = ['FIPS'] + [f'{year} {variable} Rates' for year in range(2010, 2023)]
         variable_df = pd.read_csv(variable_path, header=0, names=variable_names)
-        variable_df['FIPS'] = variable_df['FIPS'].astype(str).apply(lambda x: x.zfill(5) if len(x) < 5 else x)
-        variable_df[variable_names[1:]] = variable_df[variable_names[1:]].astype(float).clip(lower=0)
-
-        # Normalize values for 'Dispensing' to be between 0 and 100
-        # if variable == 'Dispensing':
-        #     for year in range(2014, 2021):
-        #         col_name = f'{year} Dispensing rates'
-        #         min_val = variable_df[col_name].min()
-        #         max_val = variable_df[col_name].max()
-        #         variable_df[col_name] = 100 * (variable_df[col_name] - min_val) / (max_val - min_val)
+        variable_df['FIPS'] = variable_df['FIPS'].astype(str).str.zfill(5)
+        variable_df[variable_names[1:]] = variable_df[variable_names[1:]].astype(float)
 
         if data_df.empty:
             data_df = variable_df
@@ -63,13 +50,13 @@ def construct_data_df():
 
 def construct_mort_df(mort_path, mort_names):
     mort_df = pd.read_csv(mort_path, header=0, names=mort_names)
-    mort_df['FIPS'] = mort_df['FIPS'].astype(str).apply(lambda x: x.zfill(5) if len(x) < 5 else x)
-    mort_df[mort_names[1:]] = mort_df[mort_names[1:]].astype(float).clip(lower=0)
+    mort_df['FIPS'] = mort_df['FIPS'].astype(str).str.zfill(5)
+    mort_df[mort_names[1:]] = mort_df[mort_names[1:]].astype(float)
     mort_df = mort_df.sort_values(by='FIPS').reset_index(drop=True)
     return mort_df
 
 class Tensors(Dataset):
-    def __init__(self, data_df, mort_df, years=YEARS):
+    def __init__(self, data_df, mort_df, years=DATA_YEARS):
         self.data_df = data_df
         self.mort_df = mort_df
         self.years = years
@@ -82,15 +69,14 @@ class Tensors(Dataset):
         year = self.years[idx]
         variable_list = []
         for variable in FEATURES:
-            yearly_var_rates = self.data_df[f'{year} {variable} rates'].values
+            yearly_var_rates = self.data_df[f'{year} {variable} Rates'].values
             variable_list.append(yearly_var_rates)
         yearly_data_array = np.array(variable_list)
         yearly_data_tensor = torch.tensor(yearly_data_array, dtype=torch.float32)
 
-        mort_rates = self.mort_df[f'{year+1} Mortality rates'].values
-        non_zero_mort_rates = mort_rates[mort_rates > 0]
-
-        params_lognorm = lognorm.fit(non_zero_mort_rates)
+        mort_rates = self.mort_df[f'{year+1} Mortality Rates'].values
+        mort_rates = mort_rates + 1e-5 # add a small values to avoid log(0) problems
+        params_lognorm = lognorm.fit(mort_rates)
         shape, loc, scale = params_lognorm
         mort_rates = np.append(mort_rates, [shape, loc, scale])
 
@@ -166,11 +152,11 @@ def explain_model_with_shap(model, tensor_loader):
 
     plt.figure(figsize=(10, 7))
     bar_width = 0.1
-    for j in range(len(YEARS)):
-        plt.barh(np.arange(len(FEATURES)) + j * bar_width, sorted_yearly_shap_values[j], bar_width, label=f'Year {YEARS[j]+1}')
-    plt.barh(np.arange(len(FEATURES)) + len(YEARS) * bar_width, sorted_mean_shap_values, bar_width, color='black', label='Average')
+    for j in range(len(DATA_YEARS)):
+        plt.barh(np.arange(len(FEATURES)) + j * bar_width, sorted_yearly_shap_values[j], bar_width, label=f'Year {DATA_YEARS[j]+1}')
+    plt.barh(np.arange(len(FEATURES)) + len(DATA_YEARS) * bar_width, sorted_mean_shap_values, bar_width, color='black', label='Average')
 
-    plt.yticks(np.arange(len(FEATURES)) + bar_width * len(YEARS) / 2, sorted_features)
+    plt.yticks(np.arange(len(FEATURES)) + bar_width * len(DATA_YEARS) / 2, sorted_features)
     plt.xlabel('Mean |SHAP Value|', fontweight='bold')
     plt.title('SHAP Feature Importance', fontweight='bold')
     plt.legend()

@@ -133,7 +133,7 @@ def main():
     metrics_df = metrics_df.round(4)
     print(metrics_df)
 
-    compare_distributions(mort_df, predicted_shapes, predicted_locs, predicted_scales)
+    # compare_distributions(mort_df, predicted_shapes, predicted_locs, predicted_scales)
 
 if __name__ == "__main__":
     main()
