@@ -11,7 +11,7 @@ import scipy.stats as stats
 SHAPE_PATH = '2020 USA County Shapefile/Filtered Files/2020_filtered_shapefile.shp'
 MORTALITY_PATH = 'Data/Mortality/Final Files/Mortality_final_rates.csv'
 MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality Rates' for year in range(2010, 2023)]
-TAIL = 3
+TAIL = 1
 
 def construct_output_map_path(year):
     output_map_path = f'Anomalies/Anomaly Maps/{TAIL}% Tails/{year}_{TAIL}%_tail_anomaly_map'
