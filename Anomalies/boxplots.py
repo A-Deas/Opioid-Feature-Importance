@@ -6,16 +6,22 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 DATA = ['Mortality', 
-        'Aged 17 or Younger', 'Aged 65 or Older', 'Below Poverty', 'Crowding', 'Disability', 
+        'Aged 17 or Younger', 'Aged 65 or Older', 'Below Poverty', 'Crowding', 
+        # 'Disability', 
         'Group Quarters', 'Limited English Ability', 'Minority Status', 'Mobile Homes', 
         'Multi-Unit Structures', 'No High School Diploma', 'No Vehicle', 
         'Single-Parent Household', 'Unemployed']
+TAIL = 3
 
 def construct_data_df():
     data_df = pd.DataFrame()
     for variable in DATA:
-        variable_path = f'Data/Clean/{variable}_rates.csv'
-        variable_names = ['FIPS'] + [f'{year} {variable} Rates' for year in range(2014, 2021)]
+        if variable == 'Mortality':
+            variable_path = f'Data/Mortality/Final Files/{variable}_final_rates.csv'
+            variable_names = ['FIPS'] + [f'{year} {variable} Rates' for year in range(2010, 2023)]
+        else:
+            variable_path = f'Data/SVI/Final Files/{variable}_final_rates.csv'
+            variable_names = ['FIPS'] + [f'{year} {variable} Rates' for year in range(2010, 2023)]
         variable_df = pd.read_csv(variable_path, header=0, names=variable_names)
         variable_df['FIPS'] = variable_df['FIPS'].astype(str).apply(lambda x: x.zfill(5) if len(x) < 5 else x)
         variable_df[variable_names[1:]] = variable_df[variable_names[1:]].astype(float)
@@ -29,20 +35,25 @@ def construct_data_df():
     return data_df
 
 def boxplots(data_df, year):
-    mort_rates = data_df[f'{year} Mortality Rates'].values
-    non_zero_mort_rates = mort_rates[mort_rates > 0]
-    params_lognorm = lognorm.fit(non_zero_mort_rates)
-    shape, loc, scale = params_lognorm
+    # Calculate the year-over-year difference in mortality rates BEFORE THE INSETS
+    current_mort_rates = data_df[f'{year} Mortality Rates'].values
+    previous_mort_rates = data_df[f'{year-1} Mortality Rates'].values
+    differences = current_mort_rates - previous_mort_rates
+    data_df['Differences'] = differences
+
+    # Fit a normal distribution to the differences
+    mean, std_dev = stats.norm.fit(differences)
 
     # Initialize county categories
     data_df['County Category'] = 'Other'
 
-    # Constants for thresholds
-    hot_threshold = lognorm.ppf(.99, shape, loc, scale)
-    cold_threshold = lognorm.ppf(.01, shape, loc, scale)
+    # Calculate the upper and lower thresholds for anomalies
+    tail = TAIL / 100
+    upper_threshold = stats.norm.ppf(1-tail, mean, std_dev)
+    lower_threshold = stats.norm.ppf(tail, mean, std_dev)
 
-    data_df.loc[(data_df[f'{year} Mortality Rates'] > hot_threshold), 'County Category'] = 'Hot'
-    data_df.loc[(data_df[f'{year} Mortality Rates'] < cold_threshold), 'County Category'] = 'Cold'
+    data_df.loc[(data_df[f'{year} Mortality Rates'] > upper_threshold), 'County Category'] = 'Hot'
+    data_df.loc[(data_df[f'{year} Mortality Rates'] < lower_threshold), 'County Category'] = 'Cold'
 
     # Calculate mean for 'Hot' category for each feature, excluding 'Mortality'
     hot_means = {}
@@ -56,7 +67,7 @@ def main():
     means_by_year = {}
     data_df = construct_data_df()
 
-    for year in range(2014, 2021):
+    for year in range(2011, 2023):
         hot_means = boxplots(data_df, year)
         means_by_year[year] = hot_means
 

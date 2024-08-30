@@ -9,7 +9,7 @@ import scipy.stats as stats
 
 # Constants
 SHAPE_PATH = '2020 USA County Shapefile/Filtered Files/2020_filtered_shapefile.shp'
-MORTALITY_PATH = 'Data/Clean/Mortality_rates.csv'
+MORTALITY_PATH = 'Data/Mortality/Final Files/Mortality_final_rates.csv'
 MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality Rates' for year in range(2010, 2023)]
 TAIL = 3
 
@@ -37,7 +37,21 @@ def construct_anomaly_map(shape, year, output_map_path):
     title = f'{year} Anomaly Map for the Mortality Rates: {TAIL}% Tails'
     plt.title(title, size=16, weight='bold')
 
-        # Alaska and Hawaii insets
+    # Calculate the year-over-year difference in mortality rates BEFORE THE INSETS
+    current_mort_rates = shape[f'{year} Mortality Rates'].values
+    previous_mort_rates = shape[f'{year-1} Mortality Rates'].values
+    differences = current_mort_rates - previous_mort_rates
+    shape['Differences'] = differences
+
+    # Fit a normal distribution to the differences
+    mean, std_dev = stats.norm.fit(differences)
+
+    # Calculate the upper and lower thresholds for anomalies
+    tail = TAIL / 100
+    upper_threshold = stats.norm.ppf(1-tail, mean, std_dev)
+    lower_threshold = stats.norm.ppf(tail, mean, std_dev)
+
+    # Alaska and Hawaii insets
     alaska_ax = fig.add_axes([0, -0.5, 1.4, 1.4]) 
     hawaii_ax = fig.add_axes([0.24, 0.1, 0.15, 0.15])  
     
@@ -58,35 +72,17 @@ def construct_anomaly_map(shape, year, output_map_path):
         (shape[shape['STATEFP'] == '15'], hawaii_ax, 'hawaii') ]
 
     # Color the maps
-    # Calculate the year-over-year difference in mortality rates
-    current_mort_rates = shape[f'{year} Mortality'].values
-    previous_mort_rates = shape[f'{year-1} Mortality'].values
-    differences = current_mort_rates - previous_mort_rates
-    shape['Differences'] = differences
-
-    abs_differences = abs(differences)
-    shape['ABS Differences'] = abs_differences
-
-    # Fit a normal distribution to the differences
-    mean, std_dev = stats.norm.fit(abs_differences)
-
-    # Calculate the upper and lower thresholds for anomalies
-    tail = TAIL / 100
-    upper_threshold = stats.norm.ppf(1-tail, mean, std_dev)
-    lower_threshold = stats.norm.ppf(tail, mean, std_dev)
 
     for inset, ax, _ in shapes:
         for _, row in inset.iterrows():
             county = row['FIPS']
-            abs_diff = row['ABS Differences']
             diff = row['Differences']
             rate = row[f'{year} Mortality Rates']
 
-            if abs_diff > upper_threshold:
-                if diff > 0:
-                    color = 'red'
-                elif diff < 0:
-                    color = 'blue'
+            if diff > upper_threshold:
+                color = 'red'
+            elif diff < lower_threshold:
+                color = 'blue'
             else:
                 color = 'lightgrey'
         
