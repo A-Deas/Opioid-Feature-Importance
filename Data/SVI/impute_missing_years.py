@@ -198,7 +198,7 @@ def load_shapefile(shapefile_path):
     return shape
 
 def fix_fips(shape, variable_df, var):
-    # Remember that FIPS codes were accumulated over all years, so we are not going to have any missing counties at all
+    # Remember that FIPS codes were accumulated over all years, so we are not going to have any missing counties at all (all 2022 counties are there)
     # But we do need to drop the "excess" counties: counties that have been removed from the national county structure by the year 2022
     # These counties will not be plotted on any of the maps
     variable_df = variable_df[variable_df['FIPS'].isin(shape['FIPS'])] # Keep only counties that exist in the shape
@@ -222,6 +222,7 @@ def fix_fips(shape, variable_df, var):
     # # Add the missing data to the variable_df
     # variable_df = pd.concat([variable_df, missing_df], ignore_index=True, sort=False)
     # variable_df = variable_df.sort_values(by='FIPS').reset_index(drop=True)
+
     return variable_df
 
 def save_final_rates(variable_df, var):
