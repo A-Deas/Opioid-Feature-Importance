@@ -1,5 +1,6 @@
 import pandas as pd
 import geopandas as gpd
+from tobler.area_weighted import area_interpolate
 
 RAW_MORTALITY_NAMES = ['FIPS', 'Deaths', 'Population', 'Crude Rate']
 COLUMNS_TO_KEEP = ['FIPS', 'Deaths', 'Population']
@@ -35,6 +36,54 @@ def clean_rates(year):
     mort_df[f'{year} MR'] = mort_df[f'{year} MR'].round(2)
     return mort_df
 
+def fix_connecticut(mort_df, year):
+    # Load 2020 and 2022 shapefiles for Connecticut
+    # 2020 shapefile has the old county structure (matches will all years: 2010 - 2021)
+    # 2022 shapefile has the new county structure
+    old_shapefile_path = '2020 USA County Shapefile/Filtered Files/2020_filtered_shapefile.shp'
+    new_shapefile_path = '2022 USA County Shapefile/Filtered Files/2022_filtered_shapefile.shp'
+    
+    old_ct_shape = gpd.read_file(old_shapefile_path)
+    new_ct_shape = gpd.read_file(new_shapefile_path)
+
+    # Filter shapefiles for Connecticut only (FIPS codes starting with '09')
+    old_ct_shape = old_ct_shape[old_ct_shape['FIPS'].str.startswith('09')]
+    new_ct_shape = new_ct_shape[new_ct_shape['FIPS'].str.startswith('09')]
+
+    # Reproject to a projected CRS (e.g., UTM)
+    old_ct_shape = old_ct_shape.to_crs(epsg=26918)  # UTM zone 18N (for Connecticut)
+    new_ct_shape = new_ct_shape.to_crs(epsg=26918)  # UTM zone 18N
+
+    # Get the old CT data
+    ct_df = mort_df[mort_df['FIPS'].str.startswith('09')]
+    
+    # Merge the old CT data with the old CT shape
+    old_ct_shape = old_ct_shape.merge(ct_df, how='left', on='FIPS')
+    
+    # Perform area-weighted interpolation to the new county structure
+    # We want to use extensive variables b/c mortality rates depend on population size
+    interpolated_df = area_interpolate(source_df=old_ct_shape,
+                                       target_df=new_ct_shape,
+                                       extensive_variables=[f'{year} MR'])
+
+    # Add FIPS column back the interpolated_df
+    interpolated_df['FIPS'] = new_ct_shape['FIPS'].values
+    
+    # Merge interpolated data with the 2022 county shapefile
+    new_ct_shape = new_ct_shape.merge(interpolated_df, how='left', on='FIPS')
+
+    # Construct the fixed CT dataframe
+    fixed_ct_df = new_ct_shape[['FIPS', f'{year} MR']].copy()
+    fixed_ct_df[f'{year} MR'] = fixed_ct_df[f'{year} MR'].round(2)
+    
+    # Remove the old CT data from the original DataFrame
+    mort_df = mort_df[~mort_df['FIPS'].str.startswith('09')]
+
+    # Append the fixed CT data to the original DataFrame
+    mort_df = pd.concat([mort_df, fixed_ct_df], ignore_index=True)
+    mort_df = mort_df.sort_values(by='FIPS').reset_index(drop=True)
+    return mort_df
+
 def load_shapefile():
     shapefile_path = f'2022 USA County Shapefile/Filtered Files/2022_filtered_shapefile.shp'
     shape = gpd.read_file(shapefile_path)
@@ -66,6 +115,8 @@ def filter_fips_codes(year, mort_df, shape):
 def main():
     for year in range(2010,2023):
         mort_df = clean_rates(year)
+        if year < 2022: # In 2022, the data for CT is genuinely missing
+            mort_df = fix_connecticut(mort_df, year) 
         shape = load_shapefile()
         filter_fips_codes(year, mort_df, shape)
 

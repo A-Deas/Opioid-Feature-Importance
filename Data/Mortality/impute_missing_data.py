@@ -52,10 +52,32 @@ def fill_continental_holes(mort_df, neighs_df, year):
     return mort_df
 
 def handle_island_counties(mort_df, year):
-    island_fips = ['25019', '15003', '15007', '15001', '53055']
-    # Deal with the island counties
+    island_fips = ['25019', # Nantucket County, MA
+                   '15001', #Hawaii County, HI
+                   '15003', # Honolulu County, HI
+                   '15007', # Kauai County, HI
+                   '53055'] # San Juan County, WA
+    
+    # Define the neighbors for each island county
+    island_neighbors = {
+        '25019': ['25001', '25007'],  # Barnstable and Dukes
+        '15003': ['15007', '15005', '15009'],  # Kauai, Kalawao, and Maui
+        '15007': ['15003'],  # Honolulu
+        '15001': ['15007', '15005'],  # Kauai and Kalawao
+        '53055': ['53009', '53031', '53029', '53057', '53073']  # Clallam, Jefferson, Island, Skagit, Whatcom
+    }
+
+    # Iterate through each island FIPS code
     for fips in island_fips:
-        mort_df.at[fips, f'{year} MR'] = 0.0
+        neighbors = island_neighbors[fips]
+        
+        # Collect mortality rates from valid neighbors
+        neighbor_rates = [mort_df.loc[neighbor, f'{year} MR'] for neighbor in neighbors if neighbor in mort_df.index and mort_df.loc[neighbor, f'{year} MR'] != -9]
+        
+        # Calculate the new value if there are valid neighbors
+        if neighbor_rates:
+            new_value = sum(neighbor_rates) / len(neighbor_rates)
+            mort_df.loc[fips, f'{year} MR'] = new_value
     return mort_df
 
 def clean_rates(mort_df, neighs_df, year):

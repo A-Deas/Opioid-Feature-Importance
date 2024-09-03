@@ -1,6 +1,7 @@
 import logging
 import pandas as pd
 import geopandas as gpd
+from tobler.area_weighted import area_interpolate
 
 # Constants
 SVI_VAR_LIST = {
@@ -79,54 +80,109 @@ def load_dataframes():
     df_2022 = pd.read_csv(PATH_2022)
     df_2022['FIPS'] = df_2022['FIPS'].astype(str).str.zfill(5)
     df_2022.rename(columns={'EPL_POV150': 'EPL_POV'}, inplace=True)
+
     return df_2010, df_2014, df_2016, df_2018, df_2020, df_2022
 
 def construct_var_dataframe(df_2010, df_2014, df_2016, df_2018, df_2020, df_2022, var):
     # Start by grabbing 2010 data
-    variable_df = df_2010[['FIPS', var]].copy() # we just copy the FIPS and variable columns
-    variable_df.rename(columns={var: f'2010 {var}'}, inplace=True) # need to account for the year
+    variable_df = df_2010[['FIPS', var]].copy()  # Copy the FIPS and variable columns
+    variable_df.rename(columns={var: f'2010 {var}'}, inplace=True)  # Account for the year
 
     # Merge the data for the other years one year at a time
-    # The FIPS column will progressively accumulate all FIPS codes up to the yearly merge
-    # If a FIPS code was present in a previous year but not in the current year, the corresponding variable value for that year will be NaN
-    # If a FIPS code is present in the current year but not in a previous year, it simply gets added to the list with its data
-    dummy_df = df_2014[['FIPS', var]].copy()
-    dummy_df.rename(columns={var: f'2014 {var}'}, inplace=True)
-    variable_df = pd.merge(variable_df, dummy_df, on='FIPS', how='left')
-
-    dummy_df = df_2016[['FIPS', var]].copy()
-    dummy_df.rename(columns={var: f'2016 {var}'}, inplace=True)
-    variable_df = pd.merge(variable_df, dummy_df, on='FIPS', how='left')
-
-    dummy_df = df_2018[['FIPS', var]].copy()
-    dummy_df.rename(columns={var: f'2018 {var}'}, inplace=True)
-    variable_df = pd.merge(variable_df, dummy_df, on='FIPS', how='left')
-
-    dummy_df = df_2020[['FIPS', var]].copy()
-    dummy_df.rename(columns={var: f'2020 {var}'}, inplace=True)
-    variable_df = pd.merge(variable_df, dummy_df, on='FIPS', how='left')
-
-    dummy_df = df_2022[['FIPS', var]].copy()
-    dummy_df.rename(columns={var: f'2022 {var}'}, inplace=True)
-    variable_df = pd.merge(variable_df, dummy_df, on='FIPS', how='left')
+    # Use outer joins to accumulate all FIPS codes across years
+    years = [(df_2014, '2014'), (df_2016, '2016'), (df_2018, '2018'), (df_2020, '2020'), (df_2022, '2022')]
+    
+    for df, year in years:
+        dummy_df = df[['FIPS', var]].copy()
+        dummy_df.rename(columns={var: f'{year} {var}'}, inplace=True)
+        variable_df = pd.merge(variable_df, dummy_df, on='FIPS', how='outer')
 
     # If we accumulated some NaN values, switch them to the missing data value
     variable_df.fillna(-9, inplace=True)
 
     # Set the FIPS codes to be string values
-    variable_df['FIPS'] = variable_df['FIPS'].astype(str).str.zfill(5)
+    variable_df['FIPS'] = variable_df['FIPS'].astype(str).str.zfill(5) 
+
     return variable_df
 
-def impute_data(variable_df, var):
-    # Impute data for the missing years
-    variable_df[f'2011 {var}'] = variable_df[f'2010 {var}'] + 0.25 * (variable_df[f'2014 {var}'] - variable_df[f'2010 {var}'])
-    variable_df[f'2012 {var}'] = variable_df[f'2010 {var}'] + 0.50 * (variable_df[f'2014 {var}'] - variable_df[f'2010 {var}'])
-    variable_df[f'2013 {var}'] = variable_df[f'2010 {var}'] + 0.75 * (variable_df[f'2014 {var}'] - variable_df[f'2010 {var}'])
 
-    variable_df[f'2015 {var}'] = variable_df[f'2014 {var}'] + 0.50 * (variable_df[f'2016 {var}'] - variable_df[f'2014 {var}'])
-    variable_df[f'2017 {var}'] = variable_df[f'2016 {var}'] + 0.50 * (variable_df[f'2018 {var}'] - variable_df[f'2016 {var}'])
-    variable_df[f'2019 {var}'] = variable_df[f'2018 {var}'] + 0.50 * (variable_df[f'2020 {var}'] - variable_df[f'2018 {var}'])
-    variable_df[f'2021 {var}'] = variable_df[f'2020 {var}'] + 0.50 * (variable_df[f'2022 {var}'] - variable_df[f'2020 {var}'])
+def impute_data(variable_df, var):
+    # Impute data for the missing years 
+    # Skip calculation if any bordering year has missing data as we cannot impute properly in such cases
+    def impute_years(start_year, end_year, mid_years):
+        start_col = f'{start_year} {var}'
+        end_col = f'{end_year} {var}'
+        for year, weight in mid_years:
+            mid_col = f'{year} {var}'
+            variable_df[mid_col] = variable_df.apply(
+                lambda row: row[start_col] + weight * (row[end_col] - row[start_col])
+                if row[start_col] != -9.0 and row[end_col] != -9.0 else -9.0,
+                axis=1
+            )
+
+    # Impute data for the missing years
+    impute_years(2010, 2014, [(2011, 0.25), (2012, 0.50), (2013, 0.75)])
+    impute_years(2014, 2016, [(2015, 0.50)])
+    impute_years(2016, 2018, [(2017, 0.50)])
+    impute_years(2018, 2020, [(2019, 0.50)])
+    impute_years(2020, 2022, [(2021, 0.50)])
+
+    return variable_df
+
+def fix_connecticut(variable_df, var):
+    for year in range(2010, 2022):
+        old_ct_fips = ['09001', '09003', '09005', '09007', '09009', '09011', '09013', '09015']
+        yearly_ct_df = variable_df[variable_df['FIPS'].isin(old_ct_fips)][['FIPS', f'{year} {var}']]
+
+        old_shapefile_path = '2020 USA County Shapefile/Filtered Files/2020_filtered_shapefile.shp'
+        new_shapefile_path = '2022 USA County Shapefile/Filtered Files/2022_filtered_shapefile.shp'
+        
+        old_ct_shape = gpd.read_file(old_shapefile_path)
+        new_ct_shape = gpd.read_file(new_shapefile_path)
+
+        # Filter shapefiles for Connecticut only (FIPS codes starting with '09')
+        old_ct_shape = old_ct_shape[old_ct_shape['FIPS'].isin(old_ct_fips)]
+        new_ct_shape = new_ct_shape[new_ct_shape['FIPS'].str.startswith('09')]
+
+        # Reproject to a projected CRS (e.g., UTM)
+        old_ct_shape = old_ct_shape.to_crs(epsg=26918)  # UTM zone 18N (for Connecticut)
+        new_ct_shape = new_ct_shape.to_crs(epsg=26918)  # UTM zone 18N
+
+        # Merge the old CT data with the old CT shape
+        old_ct_shape = old_ct_shape.merge(yearly_ct_df, how='left', on='FIPS')
+
+        # Perform area-weighted interpolation to the new county structure
+        interpolated_df = area_interpolate(source_df=old_ct_shape,
+                                           target_df=new_ct_shape,
+                                           extensive_variables=[f'{year} {var}'])
+
+        # Add FIPS column back to the interpolated_df
+        interpolated_df['FIPS'] = new_ct_shape['FIPS'].values
+        
+        # Merge interpolated data with the 2022 county shapefile
+        new_ct_shape_year = new_ct_shape.merge(interpolated_df, how='left', on='FIPS')
+
+        # Update the variable_df with the interpolated data by merging or updating
+        variable_df = variable_df.set_index('FIPS')
+        fixed_ct_df = new_ct_shape_year[['FIPS', f'{year} {var}']].set_index('FIPS')
+
+        # Update the existing rows for Connecticut FIPS codes
+        variable_df.update(fixed_ct_df)
+
+        # Reset the index to make FIPS a column again
+        variable_df = variable_df.reset_index()
+
+    # Fix imputation for 2021, these values got royally messed up with the 2022 data going offline
+    new_ct_fips = ['09110', '09120', '09130', '09140', '09150', '09160', '09170', '09180', '09190']
+    for fips in new_ct_fips:
+        prev_value = variable_df[variable_df['FIPS'] == fips][f'2020 {var}'].values[0]
+        next_value = variable_df[variable_df['FIPS'] == fips][f'2022 {var}'].values[0]
+
+        value_2021 = prev_value + 0.50 * (next_value - prev_value)
+        variable_df.loc[variable_df['FIPS'] == fips, f'2021 {var}'] = value_2021
+
+    # Final sort and reset index
+    variable_df = variable_df.sort_values(by='FIPS').reset_index(drop=True)
     return variable_df
 
 def fix_rio_arriba(variable_df, var):
@@ -142,34 +198,34 @@ def load_shapefile(shapefile_path):
     return shape
 
 def fix_fips(shape, variable_df, var):
-    # Remove FIPS codes from data that do not exist in the shape
-    # Remember that FIPS codes were accumulated over all years, so we may have a few of these
-    # These are counties that have been removed from the national county structure by the year 2022
-    # These counties are "excess" data which will not be plotted on any of the maps
+    # Remember that FIPS codes were accumulated over all years, so we are not going to have any missing counties at all
+    # But we do need to drop the "excess" counties: counties that have been removed from the national county structure by the year 2022
+    # These counties will not be plotted on any of the maps
     variable_df = variable_df[variable_df['FIPS'].isin(shape['FIPS'])] # Keep only counties that exist in the shape
 
-    # Now we need to add any missing FIPS codes
-    # These are counties which are in the shapefile, but not in the data
-    # These counties will be plotted on every map, but do not have data
-    missing_fips = shape[~shape['FIPS'].isin(variable_df['FIPS'])]['FIPS']
-    missing_fips_list = missing_fips.to_list()
-    logging.info(f'Missing data for variable {var}: {missing_fips_list}.')
+    # # Now we need to add any missing FIPS codes
+    # # These are counties which are in the shapefile, but not in the data
+    # # These counties will be plotted on every map, but do not have data
+    # missing_fips = shape[~shape['FIPS'].isin(variable_df['FIPS'])]['FIPS']
+    # missing_fips_list = missing_fips.to_list()
+    # logging.info(f'Missing data for variable {var}: {missing_fips_list}.')
     
-    # Create a DataFrame with the missing FIPS codes 
-    # Then fill in every year with the missing data value b/c these codes were not present during ANY year of data
-    missing_df = pd.DataFrame({
-        'FIPS': missing_fips
-    })
+    # # Create a DataFrame with the missing FIPS codes 
+    # # Then fill in every year with the missing data value b/c these codes were not present during ANY year of data
+    # missing_df = pd.DataFrame({
+    #     'FIPS': missing_fips
+    # })
     
-    for yr in range(2010, 2023):
-        missing_df[f'{yr} {var}'] = MISSING_DATA_VALUE
+    # for yr in range(2010, 2023):
+    #     missing_df[f'{yr} {var}'] = MISSING_DATA_VALUE
 
-    # Add the missing data to the variable_df
-    variable_df = pd.concat([variable_df, missing_df], ignore_index=True, sort=False)
-    variable_df = variable_df.sort_values(by='FIPS').reset_index(drop=True)
+    # # Add the missing data to the variable_df
+    # variable_df = pd.concat([variable_df, missing_df], ignore_index=True, sort=False)
+    # variable_df = variable_df.sort_values(by='FIPS').reset_index(drop=True)
     return variable_df
 
 def save_final_rates(variable_df, var):
+
     plain_english_var = SVI_VAR_LIST.get(var, '')
     output_path = f'Data/SVI/Interim Files/{plain_english_var}_interim.csv'
 
@@ -196,6 +252,7 @@ def main():
         variable_df = construct_var_dataframe(df_2010, df_2014, df_2016, df_2018, df_2020, df_2022, var)
         variable_df = impute_data(variable_df, var)
         variable_df = fix_rio_arriba(variable_df, var)
+        variable_df = fix_connecticut(variable_df, var)
         shape = load_shapefile(SHAPE_PATH)
         variable_df = fix_fips(shape, variable_df, var)
         save_final_rates(variable_df, var)
