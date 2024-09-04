@@ -102,7 +102,8 @@ def clean_rates(mort_df, neighs_df, year):
     mort_df = handle_island_counties(mort_df, year)
 
     # Round the mortality rates to two decimal places
-    mort_df[f'{year} MR'] = mort_df[f'{year} MR'].round(2)
+    # And one CT county came out slightly negative in 2010, so we need to clip that
+    mort_df[f'{year} MR'] = mort_df[f'{year} MR'].round(2).clip(lower=0)
 
     mort_df = mort_df.reset_index()
     return mort_df

@@ -50,7 +50,7 @@ def fix_connecticut(mort_df, year):
     old_ct_shape = old_ct_shape[old_ct_shape['FIPS'].str.startswith('09')]
     new_ct_shape = new_ct_shape[new_ct_shape['FIPS'].str.startswith('09')]
 
-    # Reproject to a projected CRS (e.g., UTM)
+    # Tobler needs a projected CRS (e.g., UTM) to run
     old_ct_shape = old_ct_shape.to_crs(epsg=26918)  # UTM zone 18N (for Connecticut)
     new_ct_shape = new_ct_shape.to_crs(epsg=26918)  # UTM zone 18N
 
