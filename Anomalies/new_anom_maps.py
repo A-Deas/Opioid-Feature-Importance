@@ -77,7 +77,6 @@ def construct_anomaly_map(shape, year, output_map_path):
         for _, row in inset.iterrows():
             county = row['FIPS']
             diff = row['Differences']
-            rate = row[f'{year} Mortality Rates']
 
             if diff > upper_threshold:
                 color = 'red'
