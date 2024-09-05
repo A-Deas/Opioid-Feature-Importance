@@ -59,7 +59,7 @@ def boxplots(data_df, year):
     hot_means = {}
     for feature in DATA:
         if feature != 'Mortality':
-            hot_means[feature] = data_df.loc[data_df['County Category'] == 'Hot', f'{year} {feature} Rates'].mean()
+            hot_means[feature] = data_df.loc[data_df['County Category'] == 'Hot', f'{year-1} {feature} Rates'].mean()
 
     return hot_means
 
