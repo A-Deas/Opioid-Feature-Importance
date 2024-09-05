@@ -1,194 +1,253 @@
-08:42:05 Training model --------------------------------
+09:59:18 Training model --------------------------------
 
-08:42:06 Epoch 1/500, Training Loss: 12.0959
-08:42:06 Epoch 1/500, Validation Loss: 7.6252
-08:42:06 Epoch 2/500, Training Loss: 7.8045
-08:42:06 Epoch 2/500, Validation Loss: 5.6181
-08:42:07 Epoch 3/500, Training Loss: 7.4989
-08:42:07 Epoch 3/500, Validation Loss: 10.8424
-08:42:07 Epoch 4/500, Training Loss: 11.289
-08:42:07 Epoch 4/500, Validation Loss: 8.7081
-08:42:08 Epoch 5/500, Training Loss: 6.6618
-08:42:08 Epoch 5/500, Validation Loss: 9.9788
-08:42:08 Epoch 6/500, Training Loss: 10.0052
-08:42:08 Epoch 6/500, Validation Loss: 5.2953
-08:42:09 Epoch 7/500, Training Loss: 6.2436
-08:42:09 Epoch 7/500, Validation Loss: 4.8262
-08:42:09 Epoch 8/500, Training Loss: 5.9887
-08:42:09 Epoch 8/500, Validation Loss: 4.6982
-08:42:09 Epoch 9/500, Training Loss: 5.7756
-08:42:09 Epoch 9/500, Validation Loss: 4.6365
-08:42:10 Epoch 10/500, Training Loss: 5.7751
-08:42:10 Epoch 10/500, Validation Loss: 4.6604
-08:42:10 Epoch 11/500, Training Loss: 5.6288
-08:42:10 Epoch 11/500, Validation Loss: 4.6204
-08:42:10 Epoch 12/500, Training Loss: 5.6594
-08:42:10 Epoch 12/500, Validation Loss: 4.627
-08:42:11 Epoch 13/500, Training Loss: 5.6103
-08:42:11 Epoch 13/500, Validation Loss: 4.6209
-08:42:11 Epoch 14/500, Training Loss: 5.6076
-08:42:11 Epoch 14/500, Validation Loss: 4.6228
-08:42:12 Epoch 15/500, Training Loss: 5.5792
-08:42:12 Epoch 15/500, Validation Loss: 4.6145
-08:42:12 Epoch 16/500, Training Loss: 5.5836
-08:42:12 Epoch 16/500, Validation Loss: 4.6146
-08:42:12 Epoch 17/500, Training Loss: 5.5702
-08:42:12 Epoch 17/500, Validation Loss: 4.6122
-08:42:13 Epoch 18/500, Training Loss: 5.5681
-08:42:13 Epoch 18/500, Validation Loss: 4.6105
-08:42:13 Epoch 19/500, Training Loss: 5.5601
-08:42:13 Epoch 19/500, Validation Loss: 4.6075
-08:42:14 Epoch 20/500, Training Loss: 5.5591
-08:42:14 Epoch 20/500, Validation Loss: 4.606
-08:42:14 Epoch 21/500, Training Loss: 5.5531
-08:42:14 Epoch 21/500, Validation Loss: 4.6029
-08:42:14 Epoch 22/500, Training Loss: 5.5512
-08:42:14 Epoch 22/500, Validation Loss: 4.6024
-08:42:15 Epoch 23/500, Training Loss: 5.5469
-08:42:15 Epoch 23/500, Validation Loss: 4.6005
-08:42:15 Epoch 24/500, Training Loss: 5.5447
-08:42:15 Epoch 24/500, Validation Loss: 4.5994
-08:42:16 Epoch 25/500, Training Loss: 5.5409
-08:42:16 Epoch 25/500, Validation Loss: 4.5978
-08:42:16 Epoch 26/500, Training Loss: 5.5384
-08:42:16 Epoch 26/500, Validation Loss: 4.5963
-08:42:16 Epoch 27/500, Training Loss: 5.5353
-08:42:16 Epoch 27/500, Validation Loss: 4.5952
-08:42:17 Epoch 28/500, Training Loss: 5.5327
-08:42:17 Epoch 28/500, Validation Loss: 4.5954
-08:42:17 Epoch 29/500, Training Loss: 5.5293
-08:42:17 Epoch 29/500, Validation Loss: 4.5945
-08:42:18 Epoch 30/500, Training Loss: 5.527
-08:42:18 Epoch 30/500, Validation Loss: 4.5938
-08:42:18 Epoch 31/500, Training Loss: 5.5235
-08:42:18 Epoch 31/500, Validation Loss: 4.5926
-08:42:19 Epoch 32/500, Training Loss: 5.521
-08:42:19 Epoch 32/500, Validation Loss: 4.5911
-08:42:19 Epoch 33/500, Training Loss: 5.5183
-08:42:19 Epoch 33/500, Validation Loss: 4.5895
-08:42:20 Epoch 34/500, Training Loss: 5.5148
-08:42:20 Epoch 34/500, Validation Loss: 4.5895
-08:42:20 Epoch 35/500, Training Loss: 5.5119
-08:42:20 Epoch 35/500, Validation Loss: 4.5881
-08:42:21 Epoch 36/500, Training Loss: 5.5091
-08:42:21 Epoch 36/500, Validation Loss: 4.588
-08:42:22 Epoch 37/500, Training Loss: 5.5065
-08:42:22 Epoch 37/500, Validation Loss: 4.5875
-08:42:22 Epoch 38/500, Training Loss: 5.5031
-08:42:22 Epoch 38/500, Validation Loss: 4.5864
-08:42:23 Epoch 39/500, Training Loss: 5.5002
-08:42:23 Epoch 39/500, Validation Loss: 4.5853
-08:42:23 Epoch 40/500, Training Loss: 5.4971
-08:42:23 Epoch 40/500, Validation Loss: 4.585
-08:42:24 Epoch 41/500, Training Loss: 5.4939
-08:42:24 Epoch 41/500, Validation Loss: 4.5838
-08:42:24 Epoch 42/500, Training Loss: 5.4914
-08:42:25 Epoch 42/500, Validation Loss: 4.5838
-08:42:25 Epoch 43/500, Training Loss: 5.4879
-08:42:25 Epoch 43/500, Validation Loss: 4.583
-08:42:26 Epoch 44/500, Training Loss: 5.4848
-08:42:26 Epoch 44/500, Validation Loss: 4.5823
-08:42:26 Epoch 45/500, Training Loss: 5.4818
-08:42:26 Epoch 45/500, Validation Loss: 4.5819
-08:42:27 Epoch 46/500, Training Loss: 5.4784
-08:42:27 Epoch 46/500, Validation Loss: 4.581
-08:42:27 Epoch 47/500, Training Loss: 5.4757
-08:42:27 Epoch 47/500, Validation Loss: 4.5796
-08:42:28 Epoch 48/500, Training Loss: 5.4722
-08:42:28 Epoch 48/500, Validation Loss: 4.5795
-08:42:28 Epoch 49/500, Training Loss: 5.4688
-08:42:28 Epoch 49/500, Validation Loss: 4.5787
-08:42:29 Epoch 50/500, Training Loss: 5.4656
-08:42:29 Epoch 50/500, Validation Loss: 4.5794
-08:42:30 Epoch 51/500, Training Loss: 5.4624
-08:42:30 Epoch 51/500, Validation Loss: 4.5782
-08:42:30 Epoch 52/500, Training Loss: 5.459
-08:42:30 Epoch 52/500, Validation Loss: 4.5778
-08:42:31 Epoch 53/500, Training Loss: 5.4555
-08:42:31 Epoch 53/500, Validation Loss: 4.5758
-08:42:31 Epoch 54/500, Training Loss: 5.4526
-08:42:31 Epoch 54/500, Validation Loss: 4.5766
-08:42:32 Epoch 55/500, Training Loss: 5.4489
-08:42:32 Epoch 55/500, Validation Loss: 4.5767
-08:42:32 Epoch 56/500, Training Loss: 5.4453
-08:42:32 Epoch 56/500, Validation Loss: 4.5763
-08:42:33 Epoch 57/500, Training Loss: 5.4422
-08:42:33 Epoch 57/500, Validation Loss: 4.576
-08:42:34 Epoch 58/500, Training Loss: 5.4387
-08:42:34 Epoch 58/500, Validation Loss: 4.576
-08:42:34 Epoch 59/500, Training Loss: 5.4351
-08:42:34 Epoch 59/500, Validation Loss: 4.5762
-08:42:35 Epoch 60/500, Training Loss: 5.4319
-08:42:35 Epoch 60/500, Validation Loss: 4.5756
-08:42:35 Epoch 61/500, Training Loss: 5.4278
-08:42:35 Epoch 61/500, Validation Loss: 4.5743
-08:42:36 Epoch 62/500, Training Loss: 5.4251
-08:42:36 Epoch 62/500, Validation Loss: 4.5742
-08:42:36 Epoch 63/500, Training Loss: 5.4204
-08:42:36 Epoch 63/500, Validation Loss: 4.5743
-08:42:37 Epoch 64/500, Training Loss: 5.4176
-08:42:37 Epoch 64/500, Validation Loss: 4.5749
-08:42:37 Epoch 65/500, Training Loss: 5.4135
-08:42:37 Epoch 65/500, Validation Loss: 4.574
-08:42:38 Epoch 66/500, Training Loss: 5.4099
-08:42:38 Epoch 66/500, Validation Loss: 4.5736
-08:42:38 Epoch 67/500, Training Loss: 5.4059
-08:42:38 Epoch 67/500, Validation Loss: 4.573
-08:42:38 Epoch 68/500, Training Loss: 5.4028
-08:42:38 Epoch 68/500, Validation Loss: 4.5731
-08:42:39 Epoch 69/500, Training Loss: 5.3986
-08:42:39 Epoch 69/500, Validation Loss: 4.5729
-08:42:39 Epoch 70/500, Training Loss: 5.3952
-08:42:39 Epoch 70/500, Validation Loss: 4.5725
-08:42:40 Epoch 71/500, Training Loss: 5.3905
-08:42:40 Epoch 71/500, Validation Loss: 4.5728
-08:42:40 Epoch 72/500, Training Loss: 5.3877
-08:42:40 Epoch 72/500, Validation Loss: 4.5727
-08:42:40 Epoch 73/500, Training Loss: 5.3833
-08:42:40 Epoch 73/500, Validation Loss: 4.5728
-08:42:41 Epoch 74/500, Training Loss: 5.379
-08:42:41 Epoch 74/500, Validation Loss: 4.572
-08:42:41 Epoch 75/500, Training Loss: 5.3755
-08:42:41 Epoch 75/500, Validation Loss: 4.5728
-08:42:42 Epoch 76/500, Training Loss: 5.3705
-08:42:42 Epoch 76/500, Validation Loss: 4.572
-08:42:42 Epoch 77/500, Training Loss: 5.3679
-08:42:42 Epoch 77/500, Validation Loss: 4.5729
-08:42:42 Epoch 78/500, Training Loss: 5.3625
-08:42:42 Epoch 78/500, Validation Loss: 4.5721
-08:42:43 Epoch 79/500, Training Loss: 5.3595
-08:42:43 Epoch 79/500, Validation Loss: 4.573
-08:42:43 Epoch 80/500, Training Loss: 5.354
-08:42:43 Epoch 80/500, Validation Loss: 4.571
-08:42:44 Epoch 81/500, Training Loss: 5.3515
-08:42:44 Epoch 81/500, Validation Loss: 4.5716
-08:42:44 Epoch 82/500, Training Loss: 5.3453
-08:42:44 Epoch 82/500, Validation Loss: 4.5707
-08:42:44 Epoch 83/500, Training Loss: 5.343
-08:42:44 Epoch 83/500, Validation Loss: 4.5734
-08:42:45 Epoch 84/500, Training Loss: 5.3368
-08:42:45 Epoch 84/500, Validation Loss: 4.5712
-08:42:45 Epoch 85/500, Training Loss: 5.3344
-08:42:45 Epoch 85/500, Validation Loss: 4.5723
-08:42:46 Epoch 86/500, Training Loss: 5.3284
-08:42:46 Epoch 86/500, Validation Loss: 4.5716
-08:42:46 Epoch 87/500, Training Loss: 5.325
-08:42:46 Epoch 87/500, Validation Loss: 4.5724
-08:42:46 Epoch 88/500, Training Loss: 5.3193
-08:42:46 Epoch 88/500, Validation Loss: 4.5712
-08:42:47 Epoch 89/500, Training Loss: 5.3163
-08:42:47 Epoch 89/500, Validation Loss: 4.5736
-08:42:47 Epoch 90/500, Training Loss: 5.3101
-08:42:47 Epoch 90/500, Validation Loss: 4.572
-08:42:48 Epoch 91/500, Training Loss: 5.3076
-08:42:48 Epoch 91/500, Validation Loss: 4.5726
-08:42:48 Epoch 92/500, Training Loss: 5.3009
-08:42:48 Epoch 92/500, Validation Loss: 4.5728
-08:42:48 Early stopping at epoch 92 with best validation loss: 4.5707
-08:42:48 Model training complete and saved --------------------------------
+09:59:20 Epoch 1/500, Training Loss: 10.7656
+09:59:20 Epoch 1/500, Validation Loss: 45.4896
 
-08:42:48 Testing model --------------------------------
+09:59:20 Epoch 2/500, Training Loss: 13.6298
+09:59:20 Epoch 2/500, Validation Loss: 10.9887
 
-08:42:48 Test loss on 2020 reconstructions: 12.8252
-08:42:48 Model testing complete --------------------------------
+09:59:20 Epoch 3/500, Training Loss: 11.9175
+09:59:20 Epoch 3/500, Validation Loss: 9.2431
+
+09:59:21 Epoch 4/500, Training Loss: 6.1829
+09:59:21 Epoch 4/500, Validation Loss: 5.5887
+
+09:59:21 Epoch 5/500, Training Loss: 7.374
+09:59:21 Epoch 5/500, Validation Loss: 5.0365
+
+09:59:22 Epoch 6/500, Training Loss: 6.2799
+09:59:22 Epoch 6/500, Validation Loss: 4.8877
+
+09:59:22 Epoch 7/500, Training Loss: 5.7554
+09:59:22 Epoch 7/500, Validation Loss: 4.7719
+
+09:59:22 Epoch 8/500, Training Loss: 6.3917
+09:59:22 Epoch 8/500, Validation Loss: 4.7952
+
+09:59:23 Epoch 9/500, Training Loss: 5.7094
+09:59:23 Epoch 9/500, Validation Loss: 4.6414
+
+09:59:23 Epoch 10/500, Training Loss: 5.7969
+09:59:23 Epoch 10/500, Validation Loss: 4.6571
+
+09:59:23 Epoch 11/500, Training Loss: 5.6793
+09:59:23 Epoch 11/500, Validation Loss: 4.6608
+
+09:59:24 Epoch 12/500, Training Loss: 5.6633
+09:59:24 Epoch 12/500, Validation Loss: 4.6765
+
+09:59:24 Epoch 13/500, Training Loss: 5.5898
+09:59:24 Epoch 13/500, Validation Loss: 4.6488
+
+09:59:24 Epoch 14/500, Training Loss: 5.6124
+09:59:24 Epoch 14/500, Validation Loss: 4.6493
+
+09:59:25 Epoch 15/500, Training Loss: 5.585
+09:59:25 Epoch 15/500, Validation Loss: 4.6455
+
+09:59:25 Epoch 16/500, Training Loss: 5.5808
+09:59:25 Epoch 16/500, Validation Loss: 4.6459
+
+09:59:25 Epoch 17/500, Training Loss: 5.5642
+09:59:25 Epoch 17/500, Validation Loss: 4.6408
+
+09:59:26 Epoch 18/500, Training Loss: 5.5658
+09:59:26 Epoch 18/500, Validation Loss: 4.6404
+
+09:59:26 Epoch 19/500, Training Loss: 5.5565
+09:59:26 Epoch 19/500, Validation Loss: 4.6368
+
+09:59:26 Epoch 20/500, Training Loss: 5.553
+09:59:26 Epoch 20/500, Validation Loss: 4.6359
+
+09:59:27 Epoch 21/500, Training Loss: 5.5471
+09:59:27 Epoch 21/500, Validation Loss: 4.6331
+
+09:59:27 Epoch 22/500, Training Loss: 5.5448
+09:59:27 Epoch 22/500, Validation Loss: 4.6317
+
+09:59:27 Epoch 23/500, Training Loss: 5.5392
+09:59:27 Epoch 23/500, Validation Loss: 4.63
+
+09:59:28 Epoch 24/500, Training Loss: 5.537
+09:59:28 Epoch 24/500, Validation Loss: 4.6279
+
+09:59:28 Epoch 25/500, Training Loss: 5.5321
+09:59:28 Epoch 25/500, Validation Loss: 4.6276
+
+09:59:28 Epoch 26/500, Training Loss: 5.5291
+09:59:28 Epoch 26/500, Validation Loss: 4.625
+
+09:59:29 Epoch 27/500, Training Loss: 5.5253
+09:59:29 Epoch 27/500, Validation Loss: 4.6248
+
+09:59:29 Epoch 28/500, Training Loss: 5.5215
+09:59:29 Epoch 28/500, Validation Loss: 4.6237
+
+09:59:29 Epoch 29/500, Training Loss: 5.518
+09:59:29 Epoch 29/500, Validation Loss: 4.6227
+
+09:59:30 Epoch 30/500, Training Loss: 5.5146
+09:59:30 Epoch 30/500, Validation Loss: 4.621
+
+09:59:30 Epoch 31/500, Training Loss: 5.5104
+09:59:30 Epoch 31/500, Validation Loss: 4.6196
+
+09:59:31 Epoch 32/500, Training Loss: 5.5069
+09:59:31 Epoch 32/500, Validation Loss: 4.618
+
+09:59:31 Epoch 33/500, Training Loss: 5.5036
+09:59:31 Epoch 33/500, Validation Loss: 4.6171
+
+09:59:31 Epoch 34/500, Training Loss: 5.4995
+09:59:31 Epoch 34/500, Validation Loss: 4.6164
+
+09:59:32 Epoch 35/500, Training Loss: 5.4957
+09:59:32 Epoch 35/500, Validation Loss: 4.615
+
+09:59:32 Epoch 36/500, Training Loss: 5.4923
+09:59:32 Epoch 36/500, Validation Loss: 4.6143
+
+09:59:32 Epoch 37/500, Training Loss: 5.4882
+09:59:32 Epoch 37/500, Validation Loss: 4.613
+
+09:59:33 Epoch 38/500, Training Loss: 5.4842
+09:59:33 Epoch 38/500, Validation Loss: 4.6121
+
+09:59:33 Epoch 39/500, Training Loss: 5.4806
+09:59:33 Epoch 39/500, Validation Loss: 4.6108
+
+09:59:33 Epoch 40/500, Training Loss: 5.477
+09:59:33 Epoch 40/500, Validation Loss: 4.61
+
+09:59:34 Epoch 41/500, Training Loss: 5.4723
+09:59:34 Epoch 41/500, Validation Loss: 4.6096
+
+09:59:34 Epoch 42/500, Training Loss: 5.469
+09:59:34 Epoch 42/500, Validation Loss: 4.6094
+
+09:59:34 Epoch 43/500, Training Loss: 5.4652
+09:59:34 Epoch 43/500, Validation Loss: 4.6096
+
+09:59:35 Epoch 44/500, Training Loss: 5.4606
+09:59:35 Epoch 44/500, Validation Loss: 4.6081
+
+09:59:35 Epoch 45/500, Training Loss: 5.4575
+09:59:35 Epoch 45/500, Validation Loss: 4.6063
+
+09:59:35 Epoch 46/500, Training Loss: 5.4518
+09:59:35 Epoch 46/500, Validation Loss: 4.6052
+
+09:59:36 Epoch 47/500, Training Loss: 5.449
+09:59:36 Epoch 47/500, Validation Loss: 4.6047
+
+09:59:36 Epoch 48/500, Training Loss: 5.4444
+09:59:36 Epoch 48/500, Validation Loss: 4.6045
+
+09:59:36 Epoch 49/500, Training Loss: 5.4405
+09:59:36 Epoch 49/500, Validation Loss: 4.6038
+
+09:59:37 Epoch 50/500, Training Loss: 5.4362
+09:59:37 Epoch 50/500, Validation Loss: 4.6037
+
+09:59:37 Epoch 51/500, Training Loss: 5.4316
+09:59:37 Epoch 51/500, Validation Loss: 4.6024
+
+09:59:37 Epoch 52/500, Training Loss: 5.4284
+09:59:37 Epoch 52/500, Validation Loss: 4.6012
+
+09:59:38 Epoch 53/500, Training Loss: 5.4231
+09:59:38 Epoch 53/500, Validation Loss: 4.6008
+
+09:59:38 Epoch 54/500, Training Loss: 5.4194
+09:59:38 Epoch 54/500, Validation Loss: 4.6006
+
+09:59:38 Epoch 55/500, Training Loss: 5.4145
+09:59:38 Epoch 55/500, Validation Loss: 4.5988
+
+09:59:39 Epoch 56/500, Training Loss: 5.4107
+09:59:39 Epoch 56/500, Validation Loss: 4.5983
+
+09:59:39 Epoch 57/500, Training Loss: 5.4057
+09:59:39 Epoch 57/500, Validation Loss: 4.5978
+
+09:59:39 Epoch 58/500, Training Loss: 5.4024
+09:59:39 Epoch 58/500, Validation Loss: 4.5962
+
+09:59:40 Epoch 59/500, Training Loss: 5.3965
+09:59:40 Epoch 59/500, Validation Loss: 4.5959
+
+09:59:40 Epoch 60/500, Training Loss: 5.3927
+09:59:40 Epoch 60/500, Validation Loss: 4.5954
+
+09:59:40 Epoch 61/500, Training Loss: 5.3873
+09:59:40 Epoch 61/500, Validation Loss: 4.5952
+
+09:59:41 Epoch 62/500, Training Loss: 5.3842
+09:59:41 Epoch 62/500, Validation Loss: 4.5939
+
+09:59:41 Epoch 63/500, Training Loss: 5.3778
+09:59:41 Epoch 63/500, Validation Loss: 4.5932
+
+09:59:41 Epoch 64/500, Training Loss: 5.3741
+09:59:41 Epoch 64/500, Validation Loss: 4.5922
+
+09:59:42 Epoch 65/500, Training Loss: 5.3688
+09:59:42 Epoch 65/500, Validation Loss: 4.592
+
+09:59:42 Epoch 66/500, Training Loss: 5.3654
+09:59:42 Epoch 66/500, Validation Loss: 4.5925
+
+09:59:42 Epoch 67/500, Training Loss: 5.3587
+09:59:42 Epoch 67/500, Validation Loss: 4.5912
+
+09:59:43 Epoch 68/500, Training Loss: 5.3547
+09:59:43 Epoch 68/500, Validation Loss: 4.5902
+
+09:59:43 Epoch 69/500, Training Loss: 5.3492
+09:59:43 Epoch 69/500, Validation Loss: 4.5902
+
+09:59:43 Epoch 70/500, Training Loss: 5.3455
+09:59:43 Epoch 70/500, Validation Loss: 4.5904
+
+09:59:44 Epoch 71/500, Training Loss: 5.3386
+09:59:44 Epoch 71/500, Validation Loss: 4.5893
+
+09:59:44 Epoch 72/500, Training Loss: 5.3354
+09:59:44 Epoch 72/500, Validation Loss: 4.5907
+
+09:59:44 Epoch 73/500, Training Loss: 5.3285
+09:59:44 Epoch 73/500, Validation Loss: 4.5906
+
+09:59:45 Epoch 74/500, Training Loss: 5.3249
+09:59:45 Epoch 74/500, Validation Loss: 4.5907
+
+09:59:45 Epoch 75/500, Training Loss: 5.3177
+09:59:45 Epoch 75/500, Validation Loss: 4.5895
+
+09:59:45 Epoch 76/500, Training Loss: 5.315
+09:59:45 Epoch 76/500, Validation Loss: 4.5901
+
+09:59:46 Epoch 77/500, Training Loss: 5.3073
+09:59:46 Epoch 77/500, Validation Loss: 4.5894
+
+09:59:46 Epoch 78/500, Training Loss: 5.3036
+09:59:46 Epoch 78/500, Validation Loss: 4.5903
+
+09:59:46 Epoch 79/500, Training Loss: 5.2962
+09:59:46 Epoch 79/500, Validation Loss: 4.5895
+
+09:59:47 Epoch 80/500, Training Loss: 5.2926
+09:59:47 Epoch 80/500, Validation Loss: 4.5897
+
+09:59:47 Epoch 81/500, Training Loss: 5.2852
+09:59:47 Epoch 81/500, Validation Loss: 4.5895
+
+09:59:47 Early stopping at epoch 81 with best validation loss: 4.5893
+09:59:47 Model training complete and saved --------------------------------
+
+09:59:47 Testing model --------------------------------
+
+09:59:47 Test loss for 2022 predictions: 12.9562
+09:59:47 Model testing complete --------------------------------
 
