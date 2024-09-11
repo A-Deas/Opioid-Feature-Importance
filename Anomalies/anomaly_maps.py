@@ -2,15 +2,16 @@ import geopandas as gpd
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from scipy.stats import norm
 from scipy.stats import lognorm
 # import warnings
 # warnings.filterwarnings("ignore", category=UserWarning)
 
 # Constants
-SHAPE_PATH = '2020 USA County Shapefile/Filtered Files/2020_filtered_shapefile.shp'
-MORTALITY_PATH = 'Data/Clean/Mortality_rates.csv'
-MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality' for year in range(2014, 2021)]
-TAIL = 3
+SHAPE_PATH = '2022 USA County Shapefile/Filtered Files/2022_filtered_shapefile.shp'
+MORTALITY_PATH = 'Data/Mortality/Final Files/Mortality_final_rates.csv'
+MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality Rates' for year in range(2010, 2023)]
+TAIL = 1
 
 def construct_output_map_path(year):
     output_map_path = f'Anomalies/Anomaly Maps/{TAIL}% Tails/{year}_{TAIL}%_tail_anomaly_map'
@@ -23,7 +24,7 @@ def load_shapefile(shapefile_path):
 def load_mort_rates():
     mort_df = pd.DataFrame()
     mort_df = pd.read_csv(MORTALITY_PATH, header=0, names=MORTALITY_NAMES)
-    mort_df['FIPS'] = mort_df['FIPS'].astype(str).apply(lambda x: x.zfill(5) if len(x) < 5 else x)
+    mort_df['FIPS'] = mort_df['FIPS'].astype(str).str.zfill(5)
     mort_df[MORTALITY_NAMES[1:]] = mort_df[MORTALITY_NAMES[1:]].astype(float)
     mort_df = mort_df.sort_values(by='FIPS').reset_index(drop=True)
     return mort_df
@@ -57,27 +58,26 @@ def construct_anomaly_map(shape, year, output_map_path):
         (shape[shape['STATEFP'] == '15'], hawaii_ax, 'hawaii') ]
 
     # Color the maps
-    mort_rates = shape[f'{year} Mortality'].values
+    mort_rates = shape[f'{year} Mortality Rates'].values
     non_zero_mort_rates = mort_rates[mort_rates > 0]
-    params_lognorm = lognorm.fit(non_zero_mort_rates)
-    shape, loc, scale = params_lognorm
+    norm_params = lognorm.fit(non_zero_mort_rates)
+    log_shape, loc, scale = norm_params
 
     tail = TAIL / 100
-    upper_threshold = lognorm.ppf(1-tail, shape, loc, scale)
-    lower_threshold = lognorm.ppf(tail, shape, loc, scale)
+    upper_threshold = lognorm.ppf(1-tail, log_shape, loc, scale)
+    lower_threshold = lognorm.ppf(tail, log_shape, loc, scale)
+    print(f'Upper threshold = {upper_threshold} and lower threshold = {lower_threshold}')
 
     for inset, ax, _ in shapes:
         for _, row in inset.iterrows():
             county = row['FIPS']
-            rate = row[f'{year} Mortality']
+            rate = row[f'{year} Mortality Rates']
             
-            if rate < 0: # missing data
-                color = 'black'
-            elif rate > upper_threshold:
+            if rate > upper_threshold:
                 color = 'red'
-            elif 0 <= rate < lower_threshold:
+            elif 0 < rate < lower_threshold:
                 color = 'blue'
-            elif lower_threshold <= rate <= upper_threshold:
+            else:
                 color = 'lightgrey'
 
             inset[inset['FIPS'] == county].plot(ax=ax, color=color)
@@ -109,7 +109,7 @@ def add_legend(main_ax):
     main_ax.legend(handles=[red_patch, blue_patch], loc='lower right', bbox_to_anchor=(1.05, 0))
 
 def main():
-    for year in range(2014, 2021):
+    for year in range(2010, 2023):
         output_map_path = construct_output_map_path(year)
         shape = load_shapefile(SHAPE_PATH)
         mort_df = load_mort_rates()

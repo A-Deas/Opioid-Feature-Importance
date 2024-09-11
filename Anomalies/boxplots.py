@@ -11,7 +11,7 @@ DATA = ['Mortality',
         'Group Quarters', 'Limited English Ability', 'Minority Status', 'Mobile Homes', 
         'Multi-Unit Structures', 'No High School Diploma', 'No Vehicle', 
         'Single-Parent Household', 'Unemployed']
-TAIL = 3
+TAIL = 2
 
 def construct_data_df():
     data_df = pd.DataFrame()
@@ -23,7 +23,7 @@ def construct_data_df():
             variable_path = f'Data/SVI/Final Files/{variable}_final_rates.csv'
             variable_names = ['FIPS'] + [f'{year} {variable} Rates' for year in range(2010, 2023)]
         variable_df = pd.read_csv(variable_path, header=0, names=variable_names)
-        variable_df['FIPS'] = variable_df['FIPS'].astype(str).apply(lambda x: x.zfill(5) if len(x) < 5 else x)
+        variable_df['FIPS'] = variable_df['FIPS'].astype(str).str.zfill(5)
         variable_df[variable_names[1:]] = variable_df[variable_names[1:]].astype(float)
 
         if data_df.empty:
@@ -35,22 +35,17 @@ def construct_data_df():
     return data_df
 
 def boxplots(data_df, year):
-    # Calculate the year-over-year difference in mortality rates BEFORE THE INSETS
-    current_mort_rates = data_df[f'{year} Mortality Rates'].values
-    previous_mort_rates = data_df[f'{year-1} Mortality Rates'].values
-    differences = current_mort_rates - previous_mort_rates
-    data_df['Differences'] = differences
+    mort_rates = data_df[f'{year} Mortality Rates'].values
+    non_zero_mort_rates = mort_rates[mort_rates > 0]
+    norm_params = lognorm.fit(non_zero_mort_rates)
+    log_shape, loc, scale = norm_params
 
-    # Fit a normal distribution to the differences
-    mean, std_dev = stats.norm.fit(differences)
+    tail = TAIL / 100
+    upper_threshold = lognorm.ppf(1-tail, log_shape, loc, scale)
+    lower_threshold = lognorm.ppf(tail, log_shape, loc, scale)
 
     # Initialize county categories
     data_df['County Category'] = 'Other'
-
-    # Calculate the upper and lower thresholds for anomalies
-    tail = TAIL / 100
-    upper_threshold = stats.norm.ppf(1-tail, mean, std_dev)
-    lower_threshold = stats.norm.ppf(tail, mean, std_dev)
 
     data_df.loc[(data_df[f'{year} Mortality Rates'] > upper_threshold), 'County Category'] = 'Hot'
     data_df.loc[(data_df[f'{year} Mortality Rates'] < lower_threshold), 'County Category'] = 'Cold'
@@ -59,7 +54,42 @@ def boxplots(data_df, year):
     hot_means = {}
     for feature in DATA:
         if feature != 'Mortality':
-            hot_means[feature] = data_df.loc[data_df['County Category'] == 'Hot', f'{year-1} {feature} Rates'].mean()
+            hot_means[feature] = data_df.loc[data_df['County Category'] == 'Hot', f'{year} {feature} Rates'].mean()
+
+    # Sort features based on 'Hot' means
+    sorted_features = sorted(hot_means, key=hot_means.get, reverse=True)
+
+    # Define the order and colors of the boxplot categories
+    category_order = ['Hot', 'Cold', 'Other']
+    category_colors = {'Hot': 'red', 'Cold': 'blue', 'Other': 'green'}
+
+    # Determine the number of rows and columns needed for subplots
+    num_features = len(sorted_features)
+    num_cols = 7
+    num_rows = (num_features + num_cols - 1) // num_cols
+
+    # Initialize subplots
+    fig, axs = plt.subplots(num_rows, num_cols, figsize=(15, num_rows * 4))  # Adjust figsize accordingly
+
+    # Flatten the axes array for easy indexing
+    axs = axs.flatten()
+
+    # Create a boxplot for each feature
+    for idx, variable in enumerate(sorted_features):
+        sns.boxplot(x='County Category', y=f'{year} {variable} Rates', data=data_df, 
+                    hue='County Category', order=category_order, palette=category_colors, ax=axs[idx],
+                    whis=[0, 100], dodge=False)
+        axs[idx].set_title(f'{variable}')
+        axs[idx].set_ylabel(f'{variable} rates')
+
+    # Hide any extra subplots if the number of features is not a multiple of num_cols
+    for idx in range(num_features, len(axs)):
+        axs[idx].axis('off')
+
+    plt.tight_layout()
+    plt.savefig(f'Anomalies/Boxplots/{year}_boxplots.png', bbox_inches='tight')
+    plt.close()
+    print(f'{year} boxplots printed.')
 
     return hot_means
 
@@ -67,7 +97,7 @@ def main():
     means_by_year = {}
     data_df = construct_data_df()
 
-    for year in range(2011, 2023):
+    for year in range(2010, 2023):
         hot_means = boxplots(data_df, year)
         means_by_year[year] = hot_means
 
@@ -80,14 +110,14 @@ def main():
     # Sort the DataFrame by the average mean
     means_df = means_df.sort_values(by='Average', ascending=True)
 
-    # Use the 'Set1' colormap, which has distinct colors
-    colors = plt.cm.tab10.colors[:len(means_df.columns)-1]  # Select colors for the years
-    colors = list(colors) + ['black']  # Add black for the 'Average' column
+    # Color the bars on the importance plot
+    num_years = len(means_by_year)
+    colors = list(plt.cm.tab20.colors[:num_years]) + ['black']  # Add black for the 'Average' column
 
     # Plot the means over the years
     ax = means_df.plot(kind='barh', figsize=(12, 8), legend=True, color=colors)
 
-    plt.title('Mean Value in Hot Counties', fontweight='bold')
+    plt.title('Mean Values of SVI Variables in Hot Counties', fontweight='bold')
     plt.xlabel('Mean Value', fontweight='bold')
     plt.legend(title='Year', bbox_to_anchor=(1, 0), loc='lower right')
     plt.tight_layout()
