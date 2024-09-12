@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
 import xgboost as xgb
+import logging
 
 # Constants
 NUM_YEARS = len(range(2010,2023))
@@ -21,6 +22,13 @@ DATA = ['Mortality',
         'Group Quarters', 'Limited English Ability', 'Minority Status', 'Mobile Homes', 
         'Multi-Unit Structures', 'No High School Diploma', 'No Vehicle', 
         'Single-Parent Household', 'Unemployed']
+
+# Set up logging
+log_file = 'Log Files/xgboost.log'
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%H:%M:%S', handlers=[
+    logging.FileHandler(log_file, mode='w'),  # Overwrite the log file
+    logging.StreamHandler()
+])
 
 def construct_data_df():
     data_df = pd.DataFrame()
@@ -112,6 +120,11 @@ def plot_feature_importance(feature_importance_df):
     plt.tight_layout()
     plt.savefig('Feature Importance/xgboost_feature_importance.png', bbox_inches='tight')
     plt.close()
+
+    # Log the average feature importance for each variable
+    logging.info("Average Feature Importance for each variable:")
+    for feature, avg_importance in feature_importance_df['Average'].items():
+        logging.info(f"{feature}: {avg_importance:.4f}")
 
 def main():
     yearly_importance_dict = {yr: [] for yr in range(2011, 2023)}

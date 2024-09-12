@@ -1,0 +1,14 @@
+14:13:41 Average Feature Importance for each variable:
+14:13:41 Below Poverty: 0.0490
+14:13:41 Aged 17 or Younger: 0.0551
+14:13:41 Group Quarters: 0.0571
+14:13:41 Crowding: 0.0584
+14:13:41 Single-Parent Household: 0.0638
+14:13:41 Limited English Ability: 0.0659
+14:13:41 Multi-Unit Structures: 0.0664
+14:13:41 Mobile Homes: 0.0683
+14:13:41 Aged 65 or Older: 0.0713
+14:13:41 No Vehicle: 0.0845
+14:13:41 No High School Diploma: 0.0965
+14:13:41 Minority Status: 0.1053
+14:13:41 Unemployed: 0.1527
