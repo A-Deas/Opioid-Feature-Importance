@@ -50,11 +50,17 @@ def boxplots(data_df, year):
     data_df.loc[(data_df[f'{year} Mortality Rates'] > upper_threshold), 'County Category'] = 'Hot'
     data_df.loc[(data_df[f'{year} Mortality Rates'] < lower_threshold), 'County Category'] = 'Cold'
 
-    # Calculate mean for 'Hot' category for each feature, excluding 'Mortality'
+    # Calculate hot means for each feature
     hot_means = {}
     for feature in DATA:
         if feature != 'Mortality':
             hot_means[feature] = data_df.loc[data_df['County Category'] == 'Hot', f'{year} {feature} Rates'].mean()
+
+    # Calculate cold means for each feature
+    cold_means = {}
+    for feature in DATA:
+        if feature != 'Mortality':
+            cold_means[feature] = data_df.loc[data_df['County Category'] == 'Cold', f'{year} {feature} Rates'].mean()
 
     # Sort features based on 'Hot' means
     sorted_features = sorted(hot_means, key=hot_means.get, reverse=True)
@@ -65,7 +71,7 @@ def boxplots(data_df, year):
 
     # Determine the number of rows and columns needed for subplots
     num_features = len(sorted_features)
-    num_cols = 7
+    num_cols = 5
     num_rows = (num_features + num_cols - 1) // num_cols
 
     # Initialize subplots
@@ -91,38 +97,68 @@ def boxplots(data_df, year):
     plt.close()
     print(f'{year} boxplots printed.')
 
-    return hot_means
+    return hot_means, cold_means
 
-def main():
-    means_by_year = {}
-    data_df = construct_data_df()
-
-    for year in range(2010, 2023):
-        hot_means = boxplots(data_df, year)
-        means_by_year[year] = hot_means
-
+def hot_anomaly_summary(hot_means_by_year):
     # Convert the collected means to a DataFrame
-    means_df = pd.DataFrame(means_by_year)
+    hot_means_df = pd.DataFrame(hot_means_by_year)
 
     # Calculate the average mean across all years for each variable
-    means_df['Average'] = means_df.mean(axis=1)
+    hot_means_df['Average'] = hot_means_df.mean(axis=1)
 
     # Sort the DataFrame by the average mean
-    means_df = means_df.sort_values(by='Average', ascending=True)
+    hot_means_df = hot_means_df.sort_values(by='Average', ascending=True)
 
     # Color the bars on the importance plot
-    num_years = len(means_by_year)
+    num_years = len(hot_means_by_year)
     colors = list(plt.cm.tab20.colors[:num_years]) + ['black']  # Add black for the 'Average' column
 
     # Plot the means over the years
-    ax = means_df.plot(kind='barh', figsize=(12, 8), legend=True, color=colors)
+    ax = hot_means_df.plot(kind='barh', figsize=(12, 8), legend=True, color=colors)
 
-    plt.title('Mean Values of SVI Variables in Hot Counties', fontweight='bold')
+    plt.title('Mean Rates of SVI Variables in the Hot Counties', fontweight='bold')
     plt.xlabel('Mean Value', fontweight='bold')
     plt.legend(title='Year', bbox_to_anchor=(1, 0), loc='lower right')
     plt.tight_layout()
-    plt.savefig('Feature Importance/anomaly_investigation_plot.png', bbox_inches='tight')
+    plt.savefig('Feature Importance/hot_anomaly_summary.png', bbox_inches='tight')
     plt.close()
+
+def cold_anomaly_summary(cold_means_by_year):
+    # Convert the collected means to a DataFrame
+    cold_means_df = pd.DataFrame(cold_means_by_year)
+
+    # Calculate the average mean across all years for each variable
+    cold_means_df['Average'] = cold_means_df.mean(axis=1)
+
+    # Sort the DataFrame by the average mean
+    cold_means_df = cold_means_df.sort_values(by='Average', ascending=False)
+
+    # Color the bars on the importance plot
+    num_years = len(cold_means_by_year)
+    colors = list(plt.cm.tab20.colors[:num_years]) + ['black']  # Add black for the 'Average' column
+
+    # Plot the means over the years
+    ax = cold_means_df.plot(kind='barh', figsize=(12, 8), legend=True, color=colors)
+
+    plt.title('Mean Rates of SVI Variables in the Cold Counties', fontweight='bold')
+    plt.xlabel('Mean Value', fontweight='bold')
+    plt.legend(title='Year', bbox_to_anchor=(1, 1), loc='upper right')
+    plt.tight_layout()
+    plt.savefig('Feature Importance/cold_anomaly_summary.png', bbox_inches='tight')
+    plt.close()
+
+def main():
+    hot_means_by_year = {}
+    cold_means_by_year = {}
+    data_df = construct_data_df()
+
+    for year in range(2010, 2023):
+        hot_means, cold_means = boxplots(data_df, year)
+        hot_means_by_year[year] = hot_means
+        cold_means_by_year[year] = cold_means
+
+    hot_anomaly_summary(hot_means_by_year)
+    cold_anomaly_summary(cold_means_by_year)
 
 if __name__ == "__main__":
     main()
