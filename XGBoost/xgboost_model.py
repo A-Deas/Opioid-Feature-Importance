@@ -3,17 +3,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
 import xgboost as xgb
-from scipy.stats import lognorm
 
 # Constants
 NUM_YEARS = len(range(2010,2023))
 OPTIMIZED_XGBOOST = xgb.XGBRegressor(
     colsample_bytree=0.8,
-    gamma=0.2,
+    gamma=0.1,
     learning_rate=0.1,
     max_depth=5,
-    n_estimators=100,
-    subsample=0.8,
+    n_estimators=300,
+    subsample=0.9,
     random_state=42)
 KF = KFold(n_splits=5, shuffle=True, random_state=42)
 DATA = ['Mortality',
@@ -92,37 +91,26 @@ def update_total_importance(feature_importances, total_importance):
     return total_importance
 
 def plot_feature_importance(feature_importance_df):
-    # Number of features and number of years
-    num_features = feature_importance_df.shape[0]
-    num_years = feature_importance_df.shape[1]
+    # Calculate the average importance across all years
+    feature_importance_df['Average'] = feature_importance_df.mean(axis=1)
 
-    # Create a bar width
-    bar_width = 1 / (num_years + 1)  # add some space between sets
+    # Sort the DataFrame by the average importance
+    feature_importance_df = feature_importance_df.sort_values(by='Average', ascending=True)
 
-    # Set position of bar on X axis
-    r = np.arange(num_features)
-    positions = [r + bar_width*i for i in range(num_years)]
-    
-    # Make the plot
-    plt.figure(figsize=(12, 8))
-    
-    for i, year in enumerate(feature_importance_df.columns):
-        if i == len(feature_importance_df.columns) - 1:  # Check if it's the last item
-            plt.barh(positions[i], feature_importance_df[year], height=bar_width, label=str(year), color='black')
-        else:
-            plt.barh(positions[i], feature_importance_df[year], height=bar_width, label=str(year))
+    # Color the bars on the importance plot
+    num_years = len(feature_importance_df.columns) - 1  # Exclude 'Average'
+    colors = list(plt.cm.tab20.colors[:num_years]) + ['black']  # Add black for 'Average'
 
-    # Add xticks on the middle of the group bars
-    plt.xlabel('Feature Importance (Gain)', fontweight='bold')
+    # Plot the feature importance over the years
+    ax = feature_importance_df.plot(kind='barh', figsize=(12, 8), legend=True, color=colors)
+
     plt.title('XGBoost Feature Importance', fontweight='bold')
-    plt.yticks(r + bar_width, feature_importance_df.index)
-    plt.legend(title='Year', loc='lower right')
+    plt.xlabel('Feature Importance (Gain)', fontweight='bold')
+    plt.legend(title='Year', bbox_to_anchor=(1, 0), loc='lower right')
     
-    # Create legend & Show graphic
-    plt.legend()
+    # Adjust layout and save
     plt.tight_layout()
-    plt.savefig('Feature Importance/xgboost_feature_importance.png')
-    # plt.show()
+    plt.savefig('Feature Importance/xgboost_feature_importance.png', bbox_inches='tight')
     plt.close()
 
 def main():

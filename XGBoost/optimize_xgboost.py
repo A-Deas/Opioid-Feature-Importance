@@ -75,8 +75,8 @@ def optimize_xgb(xgb_model, features, targets):
     grid_search.fit(features, targets)
 
     # Print the best parameters and best score
-    logging.info("Best parameters found: ", grid_search.best_params_)
-    logging.info("\nBest score found: ", grid_search.best_score_)
+    logging.info(f"Best parameters found: {grid_search.best_params_}")
+    logging.info(f"Best score found: {grid_search.best_score_}")
 
 def main():
     data_df = construct_data_df()
