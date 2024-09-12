@@ -20,7 +20,8 @@ xgb_model = xgb.XGBRegressor(objective='reg:absoluteerror', random_state=42)
 KF = KFold(n_splits=5, shuffle=True, random_state=42)
 
 DATA = ['Mortality',
-        'Aged 17 or Younger', 'Aged 65 or Older', 'Below Poverty', 'Crowding', 'Disability', 
+        'Aged 17 or Younger', 'Aged 65 or Older', 'Below Poverty', 'Crowding', 
+        # 'Disability', 
         'Group Quarters', 'Limited English Ability', 'Minority Status', 'Mobile Homes', 
         'Multi-Unit Structures', 'No High School Diploma', 'No Vehicle', 
         'Single-Parent Household', 'Unemployed']
@@ -28,10 +29,14 @@ DATA = ['Mortality',
 def construct_data_df():
     data_df = pd.DataFrame()
     for variable in DATA:
-        variable_path = f'Data/Clean/{variable}_rates.csv'
-        variable_names = ['FIPS'] + [f'{year} {variable} Rates' for year in range(2014, 2021)]
+        if variable == 'Mortality':
+            variable_path = f'Data/Mortality/Final Files/{variable}_final_rates.csv'
+        else:
+            variable_path = f'Data/SVI/Final Files/{variable}_final_rates.csv'
+
+        variable_names = ['FIPS'] + [f'{year} {variable} Rates' for year in range(2010, 2023)]
         variable_df = pd.read_csv(variable_path, header=0, names=variable_names)
-        variable_df['FIPS'] = variable_df['FIPS'].astype(str).apply(lambda x: x.zfill(5) if len(x) < 5 else x)
+        variable_df['FIPS'] = variable_df['FIPS'].astype(str).str.zfill(5)
         variable_df[variable_names[1:]] = variable_df[variable_names[1:]].astype(float)
 
         if data_df.empty:
@@ -50,9 +55,9 @@ def features_targets(data_df, year):
 
 def optimize_xgb(xgb_model, features, targets):
     param_grid = {
-        'n_estimators': [100, 300, 500, 700, 900, 1100],
-        'max_depth': [3, 4, 5, 7, 9, 11],
-        'learning_rate': [0.001, 0.01, 0.1, 0.2],
+        'n_estimators': [100, 300, 500],
+        'max_depth': [3, 4, 5, 7, 9],
+        'learning_rate': [0.01, 0.1, 1],
         'subsample': [0.7, 0.8, 0.9],  # Subsample ratio of the training instances
         'colsample_bytree': [0.7, 0.8, 0.9],  # Subsample ratio of columns when constructing each tree
         'gamma': [0, 0.1, 0.2]  # Minimum loss reduction required to make a further partition on a leaf node
