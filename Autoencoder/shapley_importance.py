@@ -142,7 +142,7 @@ def explain_model_with_shap(model, tensor_loader):
 
 def plot_feature_importance(yearly_shap_values):
     # Convert the SHAP values into a DataFrame for plotting
-    yearly_shap_values_df = pd.DataFrame(yearly_shap_values, index=[f"{year}" for year in DATA_YEARS], columns=FEATURES)
+    yearly_shap_values_df = pd.DataFrame(yearly_shap_values, index=[f"{year+1}" for year in DATA_YEARS], columns=FEATURES)
 
     # Calculate the average SHAP value across all years for each feature
     yearly_shap_values_df.loc['Average'] = yearly_shap_values_df.mean(axis=0)
