@@ -147,6 +147,9 @@ def plot_feature_importance(yearly_shap_values):
     # Calculate the average SHAP value across all years for each feature
     yearly_shap_values_df.loc['Average'] = yearly_shap_values_df.mean(axis=0)
 
+    # Round the values to 4 decimal places
+    yearly_shap_values_df = yearly_shap_values_df.round(5)
+
     # Transpose the DataFrame so that features are on the Y-axis and years are the columns
     yearly_shap_values_df = yearly_shap_values_df.T
 
@@ -172,7 +175,7 @@ def plot_feature_importance(yearly_shap_values):
     # Log the average SHAP value for each variable
     logging.info("Average SHAP Value for each variable:")
     for feature, avg_shap in yearly_shap_values_df['Average'].items():
-        logging.info(f"{feature}: {avg_shap:.4f}")
+        logging.info(f"{feature}: {avg_shap:.5f}")
 
 def main():
     data_df = construct_data_df()
