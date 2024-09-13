@@ -4,7 +4,7 @@ from torch.utils.data import Dataset, DataLoader, Subset
 import numpy as np
 import pandas as pd
 import logging
-from sklearn.model_selection import KFold, train_test_split
+from sklearn.model_selection import KFold
 import random
 from scipy.stats import lognorm
 
@@ -20,7 +20,6 @@ MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality Rates' for year in range(2010, 
 LOSS_FUNCTION = nn.L1Loss() # PyTorch's built-in loss function for MAE, measures the absolute difference between the predicted values and the actual values     
 DATA_YEARS = range(2010, 2022) # Can't use data in 2022 as we are not making 2023 predictions
 NUM_COUNTIES = 3144
-KFOLDS = len(DATA_YEARS)  # Use as many folds as we have training years of data
 NUM_EPOCHS = 500
 PATIENCE = 10
 
@@ -119,16 +118,16 @@ class Autoencoder_model(nn.Module):
         return x
 
 def train_model(train_loader, val_loader, model, loss_function, optimizer, scheduler, num_epochs=NUM_EPOCHS, patience=PATIENCE):
-    best_validation_loss = float('inf')  # Track the best validation loss
+    best_val_loss = float('inf')
     patience_counter = 0
     best_model_state = None
 
     for epoch in range(num_epochs):  # Epoch loop
-        epoch_train_loss = 0.0  # Reset epoch train loss
-        num_batches_train = 0  # Batch counter for training
-
         model.train()  # Set the model to training mode
-        for inputs, targets in train_loader:  # For each training batch
+        epoch_loss = 0.0  # Reset epoch loss
+        num_batches = 0  # Batch counter
+
+        for inputs, targets in train_loader:  # For each batch
             optimizer.zero_grad()  # Reset gradients
             inputs = inputs.squeeze(dim=0)  # Remove the batch dimension
             targets = targets.squeeze(dim=0)  # Remove the batch dimension
@@ -137,43 +136,38 @@ def train_model(train_loader, val_loader, model, loss_function, optimizer, sched
             loss.backward()  # Backward pass
             optimizer.step()  # Update model parameters
             scheduler.step()  # Update the scheduler at the end of each batch
-            epoch_train_loss += loss.item()  # Accumulate loss
-            num_batches_train += 1  # Increment batch counter
+            epoch_loss += loss.item()  # Accumulate loss
+            num_batches += 1  # Increment batch counter
 
-        # Compute average train loss
-        average_epoch_train_loss = epoch_train_loss / num_batches_train
-        logging.info(f'Epoch {epoch + 1}/{num_epochs}, Training Loss: {average_epoch_train_loss:.4f}')
+        average_epoch_loss = round(epoch_loss / num_batches, 4)  # Compute average epoch loss
+        logging.info(f'Epoch {epoch + 1}/{NUM_EPOCHS}, Training Loss: {average_epoch_loss}')  # Log epoch loss
 
         # Validation step
         model.eval()  # Set the model to evaluation mode
-        epoch_val_loss = 0.0
-        num_batches_val = 0
+        val_loss = 0.0
+        with torch.no_grad():
+            for val_inputs, val_targets in val_loader:
+                val_inputs = val_inputs.squeeze(dim=0)
+                val_targets = val_targets.squeeze(dim=0)
+                val_outputs = model(val_inputs)
+                val_loss += loss_function(val_outputs, val_targets).item()
 
-        with torch.no_grad():  # Disable gradients for validation
-            for inputs, targets in val_loader:  # For each validation batch
-                inputs = inputs.squeeze(dim=0)
-                targets = targets.squeeze(dim=0)
-                outputs = model(inputs)
-                val_loss = loss_function(outputs, targets)
-                epoch_val_loss += val_loss.item()
-                num_batches_val += 1
+        average_val_loss = round(val_loss / len(val_loader), 4)
+        logging.info(f'Epoch {epoch + 1}/{NUM_EPOCHS}, Validation Loss: {average_val_loss}\n')
 
-        average_epoch_val_loss = epoch_val_loss / num_batches_val
-        logging.info(f'Epoch {epoch + 1}/{num_epochs}, Validation Loss: {average_epoch_val_loss:.4f}\n')
-
-        # Early stopping based on validation loss
-        if average_epoch_val_loss < best_validation_loss:
-            best_validation_loss = average_epoch_val_loss
+        # Early stopping check
+        if average_val_loss < best_val_loss:
+            best_val_loss = average_val_loss
             patience_counter = 0
             best_model_state = model.state_dict()  # Save the best model state
         else:
             patience_counter += 1
 
         if patience_counter >= patience:
-            logging.info(f"Early stopping at epoch {epoch + 1} with best validation loss: {best_validation_loss:.4f}")
+            logging.info(f"Early stopping at epoch {epoch + 1} with best validation loss: {best_val_loss}")
             break
 
-    return best_validation_loss, best_model_state
+    return best_val_loss, best_model_state
 
 def evaluate_model(test_loader, model, loss_function):
     model.eval()  # Set the model to evaluation mode
@@ -221,64 +215,37 @@ def main():
     mort_df = construct_mort_df(MORTALITY_PATH, MORTALITY_NAMES)
     tensors = Tensors(data_df, mort_df, years=DATA_YEARS)
 
-    kf = KFold(n_splits=KFOLDS, shuffle=True, random_state=42)
+    train_indices = [0, 1, 2, 3, 4, 6, 7, 8, 9, 10] # train on data from 2010 to 2020, skipping 2015
+    val_indices =  [5] # validate on 2015 data (for 2016 predictions)
+    test_indices = [11] # test on 2021 data (for 2022 predictions)
 
-    best_fold_test_loss = float('inf')
-    best_fold = -1
-    best_train_indices = None
-    best_test_indices = None
-    best_model_state = None
+    train_set = Subset(tensors, train_indices)
+    val_set = Subset(tensors, val_indices)
+    test_set = Subset(tensors, test_indices)
 
-    for fold, (train_indices, test_indices) in enumerate(kf.split(tensors)):
-        logging.info(f'Fold {fold + 1}/{KFOLDS}: --------------------------------\n')
+    train_loader = DataLoader(train_set, batch_size=1, shuffle=False, num_workers=0)
+    val_loader = DataLoader(val_set, batch_size=1, shuffle=False, num_workers=0)
+    test_loader = DataLoader(test_set, batch_size=1, shuffle=False, num_workers=0)
 
-        # Split train indices into actual training and validation indices
-        # I want to validate on only a single year to optimize training, I have 11 years of training
-        # data so I need to take 1/11 or 0.0909 percent of the training data for validation
-        train_indices, val_indices = train_test_split(train_indices, test_size=0.0909, random_state=42)
+    # Train the model
+    logging.info("Training model --------------------------------\n")
+    model = Autoencoder_model()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.00001) # initial LR, but will be adjusted by the scheduler
+    scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=0.00001, max_lr=.001, step_size_up=10, mode='triangular2')
+    best_validation_loss, best_model_state = train_model(train_loader, val_loader, model, LOSS_FUNCTION, optimizer, scheduler)
+    torch.save(best_model_state, 'PyTorch Models/autoencoder_model.pth')
+    logging.info("Model training complete and saved --------------------------------\n")
 
-        train_set = Subset(tensors, train_indices)
-        val_set = Subset(tensors, val_indices)
-        test_set = Subset(tensors, test_indices)
-
-        train_loader = DataLoader(train_set, batch_size=1, shuffle=False, num_workers=0)
-        val_loader = DataLoader(val_set, batch_size=1, shuffle=False, num_workers=0)
-        test_loader = DataLoader(test_set, batch_size=1, shuffle=False, num_workers=0)
-
-        # Train the model
-        logging.info("Training model --------------------------------\n")
-        model = Autoencoder_model()
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
-        scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=0.00001, max_lr=.001, step_size_up=10, mode='triangular2')
-        best_validation_loss, best_fold_model_state = train_model(train_loader, val_loader, model, LOSS_FUNCTION, optimizer, scheduler)
-        logging.info(f"Model training complete with best validation loss: {best_validation_loss:.4f} --------------------------------\n")
-
-        # Test the model
-        logging.info("Testing model --------------------------------\n")
-        model = Autoencoder_model()
-        model.load_state_dict(best_fold_model_state)  # Load the best model state from this fold
-        test_loss = evaluate_model(test_loader, model, LOSS_FUNCTION)
-        logging.info(f"Test loss on 2020 reconstructions: {test_loss:.4f}")
-
-        # Save the best model based on test loss
-        if test_loss < best_fold_test_loss:
-            best_fold_test_loss = test_loss
-            best_model_state = best_fold_model_state  # Save the best model state
-            best_fold = fold
-            best_train_indices = train_indices
-            best_test_indices = test_indices
-            torch.save(best_model_state, 'PyTorch Models/autoencoder_model.pth')
-            logging.info("Best model updated from this fold based on test loss.")
-
-    # Log the best fold details
-    logging.info(f'Best Fold: {best_fold + 1}')
-    logging.info(f'Best Fold Training Indices: {best_train_indices}')
-    logging.info(f'Best Fold Testing Indices: {best_test_indices}')
-    logging.info(f'Best Fold Test Loss: {best_fold_test_loss}')
+    # Test the model
+    logging.info("Testing model --------------------------------\n")
+    model = Autoencoder_model()
+    model.load_state_dict(best_model_state)  # Load the best model state found and saved in training
+    test_loss = evaluate_model(test_loader, model, LOSS_FUNCTION)
+    logging.info(f"Test loss for 2022 predictions: {test_loss:.4f}")
+    logging.info("Model testing complete --------------------------------\n")
 
     predictions_loader = DataLoader(tensors, batch_size=1, shuffle=False, num_workers=0)
     predict_mortality_rates(predictions_loader)
-
 
 if __name__ == "__main__":
     main()

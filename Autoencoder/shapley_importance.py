@@ -115,7 +115,7 @@ def explain_model_with_shap(model, tensor_loader):
     model.eval()
 
     for i, (input_tensor, _) in enumerate(tensor_loader):
-        print(f"Input tensor shape: {input_tensor.shape}")
+        logging.info(f"Input tensor shape: {input_tensor.shape}")
 
         def shapley_forward(x):
             with torch.no_grad(): 
@@ -126,7 +126,7 @@ def explain_model_with_shap(model, tensor_loader):
 
         # Explain the model's predictions for the inputs
         shap_values = explainer.shap_values(input_tensor)
-        print(f"shap_values shape: {shap_values[0].shape}")
+        logging.info(f"shap_values shape: {shap_values[0].shape}\n")
 
         # Aggregate SHAP values across all counties (take the mean absolute value for each feature)
         aggregated_shap_values = []
