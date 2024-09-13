@@ -142,12 +142,15 @@ def explain_model_with_shap(model, tensor_loader):
 
 def plot_feature_importance(yearly_shap_values):
     # Convert the SHAP values into a DataFrame for plotting
-    yearly_shap_values_df = pd.DataFrame(yearly_shap_values, columns=FEATURES, index=[f"{year}" for year in DATA_YEARS])
+    yearly_shap_values_df = pd.DataFrame(yearly_shap_values, index=[f"{year}" for year in DATA_YEARS], columns=FEATURES)
 
-    # Calculate the average SHAP value across all years
-    yearly_shap_values_df['Average'] = yearly_shap_values_df.mean(axis=1)
+    # Calculate the average SHAP value across all years for each feature
+    yearly_shap_values_df.loc['Average'] = yearly_shap_values_df.mean(axis=0)
 
-    # Sort the DataFrame by the average importance
+    # Transpose the DataFrame so that features are on the Y-axis and years are the columns
+    yearly_shap_values_df = yearly_shap_values_df.T
+
+    # Sort the DataFrame by the average SHAP value
     yearly_shap_values_df = yearly_shap_values_df.sort_values(by='Average', ascending=True)
 
     # Color the bars on the importance plot
@@ -170,7 +173,6 @@ def plot_feature_importance(yearly_shap_values):
     logging.info("Average SHAP Value for each variable:")
     for feature, avg_shap in yearly_shap_values_df['Average'].items():
         logging.info(f"{feature}: {avg_shap:.4f}")
-
 
 def main():
     data_df = construct_data_df()
