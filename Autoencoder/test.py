@@ -79,10 +79,11 @@ class Tensors(Dataset):
         yearly_data_array = np.array(variable_list)
         yearly_data_tensor = torch.tensor(yearly_data_array, dtype=torch.float32)
 
+        # Append the lognormal parameters to the mortality rates
         mort_rates = self.mort_df[f'{year+1} Mortality Rates'].values
-        mort_rates = mort_rates + 1e-5 # add a small values to avoid log(0) problems
-        params_lognorm = lognorm.fit(mort_rates)
-        shape, loc, scale = params_lognorm
+        non_zero_mort_rates = mort_rates[mort_rates > 0]
+        lognorm_params = lognorm.fit(non_zero_mort_rates)
+        shape, loc, scale = lognorm_params
         mort_rates = np.append(mort_rates, [shape, loc, scale])
 
         mort_rates_array = np.array(mort_rates)
@@ -232,6 +233,7 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001) # initial LR, but will be adjusted by the scheduler
     scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=0.00001, max_lr=.001, step_size_up=10, mode='triangular2')
     best_validation_loss, best_model_state = train_model(train_loader, val_loader, model, LOSS_FUNCTION, optimizer, scheduler)
+    torch.save(best_model_state, 'PyTorch Models/autoencoder_model.pth')
     logging.info("Model training complete and saved --------------------------------\n")
 
     # Test the model

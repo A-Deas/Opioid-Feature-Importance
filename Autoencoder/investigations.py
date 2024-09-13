@@ -75,7 +75,7 @@ def main():
     preds_df = attach_fips_to_predictions(fips_df, preds_df)
     preds_df = merge_preds_with_data(preds_df, mort_df)
 
-    year = 2021
+    year = 2022
     top10_df = calculate_errors_for_year(preds_df, year)
 
     print(f"Top 10 errors for {year}:")

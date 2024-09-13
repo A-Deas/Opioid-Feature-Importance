@@ -19,7 +19,7 @@ def count_zero_values(mort_df, year):
     zero_count = (mort_df[f'{year} Mortality Rates'] == 0).sum()
     print(f'Year {year}: {zero_count} counties have zero mortality rates.')
 
-def plot_lognormal_fit(mort_df, year):
+def fit_distribution(mort_df, year):
     # Get the mortality data for the selected year
     mort_rates = mort_df[f'{year} Mortality Rates'].values
     non_zero_mort_rates = mort_rates[mort_rates > 0]  # Ignore zero values for lognormal fit
@@ -46,16 +46,15 @@ def plot_lognormal_fit(mort_df, year):
     # Add a legend
     plt.legend(loc='upper right')
     
-    # Show the plot
-    plt.show()
+    # Save the plot
+    plt.savefig(f'Anomalies/Fitted Distributions/{year}_fitted_distribution.png')
 
 def main():
     mort_df = load_mort_rates()
 
     for year in range(2010, 2023):
         count_zero_values(mort_df, year)
-        # print(f'Plotting for year {year}...')
-        # plot_lognormal_fit(mort_df, year)
+        fit_distribution(mort_df, year)
 
 if __name__ == "__main__":
     main()

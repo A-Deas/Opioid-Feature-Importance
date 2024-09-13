@@ -8,6 +8,7 @@ import shap
 import random
 from scipy.stats import lognorm
 import warnings
+import logging
 
 # Constants
 FEATURES = ['Aged 17 or Younger', 'Aged 65 or Older', 'Below Poverty', 'Crowding', 
@@ -17,19 +18,16 @@ FEATURES = ['Aged 17 or Younger', 'Aged 65 or Older', 'Below Poverty', 'Crowding
             'Single-Parent Household', 'Unemployed']
 NUM_VARIABLES = len(FEATURES)
 MORTALITY_PATH = 'Data/Mortality/Final Files/Mortality_final_rates.csv'
-MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality Rates' for year in range(2010, 2023)]
-LOSS_FUNCTION = nn.L1Loss() # PyTorch's built-in loss function for MAE, measures the absolute difference between the predicted values and the actual values     
+MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality Rates' for year in range(2010, 2023)]  
 DATA_YEARS = range(2010, 2022) # Can't use data in 2022 as we are not making 2023 predictions
 NUM_COUNTIES = 3144
-KFOLDS = len(DATA_YEARS)  # Use as many folds as we have training years of data
-NUM_EPOCHS = 500
-PATIENCE = 10
 
-# Set random seeds for reproducibility
-# seed = 42
-# random.seed(seed)
-# np.random.seed(seed)
-# torch.manual_seed(seed)
+# Set up logging
+log_file = 'Log Files/shapley.log'
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%H:%M:%S', handlers=[
+    logging.FileHandler(log_file, mode='w'),  # Overwrite the log file
+    logging.StreamHandler()
+])
 
 def construct_data_df():
     data_df = pd.DataFrame()
@@ -74,10 +72,11 @@ class Tensors(Dataset):
         yearly_data_array = np.array(variable_list)
         yearly_data_tensor = torch.tensor(yearly_data_array, dtype=torch.float32)
 
+        # Append the lognormal parameters to the mortality rates
         mort_rates = self.mort_df[f'{year+1} Mortality Rates'].values
-        mort_rates = mort_rates + 1e-5 # add a small values to avoid log(0) problems
-        params_lognorm = lognorm.fit(mort_rates)
-        shape, loc, scale = params_lognorm
+        non_zero_mort_rates = mort_rates[mort_rates > 0]
+        lognorm_params = lognorm.fit(non_zero_mort_rates)
+        shape, loc, scale = lognorm_params
         mort_rates = np.append(mort_rates, [shape, loc, scale])
 
         mort_rates_array = np.array(mort_rates)
@@ -121,9 +120,8 @@ def explain_model_with_shap(model, tensor_loader):
         def shapley_forward(x):
             with torch.no_grad(): 
                 output = model(x)
-            return output.numpy()  # Convert to numpy array
+            return output.numpy()
 
-        # Ensure the input_tensor is a PyTorch tensor and use GradientExplainer
         explainer = shap.GradientExplainer((model, model.conv1d), input_tensor)
 
         # Explain the model's predictions for the inputs
@@ -133,38 +131,46 @@ def explain_model_with_shap(model, tensor_loader):
         # Aggregate SHAP values across all counties (take the mean absolute value for each feature)
         aggregated_shap_values = []
         for feature in range(len(FEATURES)):
-            county_values = shap_values[0][feature, :]  # Extract SHAP values for the current feature across all counties
+            county_values = shap_values[0][feature, :]
             feature_value = np.mean(np.abs(county_values))  # Take the mean absolute SHAP value
             aggregated_shap_values.append(feature_value)
         
         aggregated_shap_values = np.array(aggregated_shap_values)
-        print(f"Aggregated SHAP values shape: {aggregated_shap_values.shape}")
-
         yearly_shap_values.append(aggregated_shap_values)
+    
+    return yearly_shap_values
 
-    # Plot yearly SHAP values and the average, sorted by the average importance
-    yearly_shap_values_np = np.array(yearly_shap_values)
-    mean_shap_values = np.mean(yearly_shap_values_np, axis=0)
-    sorted_indices = np.argsort(mean_shap_values)
-    sorted_features = [FEATURES[idx] for idx in sorted_indices]
-    sorted_yearly_shap_values = yearly_shap_values_np[:, sorted_indices]
-    sorted_mean_shap_values = mean_shap_values[sorted_indices]
+def plot_feature_importance(yearly_shap_values):
+    # Convert the SHAP values into a DataFrame for plotting
+    yearly_shap_values_df = pd.DataFrame(yearly_shap_values, columns=FEATURES, index=[f"{year}" for year in DATA_YEARS])
 
-    plt.figure(figsize=(10, 7))
-    bar_width = 0.1
-    for j in range(len(DATA_YEARS)):
-        plt.barh(np.arange(len(FEATURES)) + j * bar_width, sorted_yearly_shap_values[j], bar_width, label=f'Year {DATA_YEARS[j]+1}')
-    plt.barh(np.arange(len(FEATURES)) + len(DATA_YEARS) * bar_width, sorted_mean_shap_values, bar_width, color='black', label='Average')
+    # Calculate the average SHAP value across all years
+    yearly_shap_values_df['Average'] = yearly_shap_values_df.mean(axis=1)
 
-    plt.yticks(np.arange(len(FEATURES)) + bar_width * len(DATA_YEARS) / 2, sorted_features)
+    # Sort the DataFrame by the average importance
+    yearly_shap_values_df = yearly_shap_values_df.sort_values(by='Average', ascending=True)
+
+    # Color the bars on the importance plot
+    num_years = len(DATA_YEARS)
+    colors = list(plt.cm.tab20.colors[:num_years]) + ['black']  # Add black for 'Average'
+
+    # Plot the SHAP feature importance over the years
+    ax = yearly_shap_values_df.plot(kind='barh', figsize=(12, 8), legend=True, color=colors)
+
+    plt.title('Shapley Feature Importance', fontweight='bold')
     plt.xlabel('Mean |SHAP Value|', fontweight='bold')
-    plt.title('SHAP Feature Importance', fontweight='bold')
-    plt.legend()
+    plt.legend(title='Year', bbox_to_anchor=(1, 0), loc='lower right')
+
+    # Adjust layout and save
     plt.tight_layout()
-    plt.savefig('Feature Importance/shapley_feature_importance.png')
+    plt.savefig('Feature Importance/shapley_feature_importance.png', bbox_inches='tight')
     plt.close()
 
-    return yearly_shap_values
+    # Log the average SHAP value for each variable
+    logging.info("Average SHAP Value for each variable:")
+    for feature, avg_shap in yearly_shap_values_df['Average'].items():
+        logging.info(f"{feature}: {avg_shap:.4f}")
+
 
 def main():
     data_df = construct_data_df()
@@ -177,6 +183,7 @@ def main():
 
     # Explain the model with SHAP
     yearly_shap_values = explain_model_with_shap(model, tensor_loader)
+    plot_feature_importance(yearly_shap_values)
 
 if __name__ == "__main__":
     main()

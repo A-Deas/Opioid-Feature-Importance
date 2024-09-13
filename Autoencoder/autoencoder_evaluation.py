@@ -87,11 +87,9 @@ def wasserstein_distance_lognorm(shape1, loc1, scale1, shape2, loc2, scale2):
 def compare_distributions(mort_df, predicted_shapes, predicted_locs, predicted_scales):
     for year in range(2011, 2023):
         mort_rates = mort_df[f'{year} Mortality Rates'].values
-        mort_rates = mort_rates + 1e-5 # add a small values to avoid log(0) problems
-
-        # Fit a log-normal distribution to the actual mortality rates
-        params_lognorm = lognorm.fit(mort_rates, floc=0)
-        shape, loc, scale = params_lognorm
+        non_zero_mort_rates = mort_rates[mort_rates > 0]
+        lognorm_params = lognorm.fit(non_zero_mort_rates)
+        shape, loc, scale = lognorm_params
     
         predicted_shape = predicted_shapes[year]
         predicted_loc = predicted_locs[year]
@@ -112,7 +110,7 @@ def compare_distributions(mort_df, predicted_shapes, predicted_locs, predicted_s
         plt.figure(figsize=(10, 5))
 
         # Plot actual distribution
-        x = np.linspace(min(mort_rates), max(mort_rates), 100)
+        x = np.linspace(non_zero_mort_rates.min(), non_zero_mort_rates.max(), 1000)
         plt.plot(x, lognorm.pdf(x, shape, loc, scale), label='Target Distribution', color='blue')
 
         # Plot predicted distribution
@@ -123,7 +121,7 @@ def compare_distributions(mort_df, predicted_shapes, predicted_locs, predicted_s
         plt.ylabel('Density')
         plt.legend()
         plt.tight_layout()
-        plt.savefig(f'Autoencoder/Autoencoder Predictions/Yearly Distributions/{year}_distribution_comparison.png')
+        plt.savefig(f'Autoencoder/Distribution Comparison/{year}_distribution_comparison.png')
         plt.close()
 
 def main():
@@ -133,7 +131,7 @@ def main():
     metrics_df = metrics_df.round(4)
     print(metrics_df)
 
-    # compare_distributions(mort_df, predicted_shapes, predicted_locs, predicted_scales)
+    compare_distributions(mort_df, predicted_shapes, predicted_locs, predicted_scales)
 
 if __name__ == "__main__":
     main()
