@@ -8,15 +8,9 @@ import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 
 # Constants
-SHAPE_PATH = '2020 USA County Shapefile/FIPS_usa.shp'
-MORTALITY_PATH = 'Clean Data/Mortality rates.csv'
-MORTALITY_NAMES = ['FIPS'] + [f'{yr} Mortality rates' for yr in range(2014, 2021)]
-PREDICTIONS_PATH = 'Hybrid Model/Decodings/final_mortality_predictions.csv'
-PREDICTIONS_NAMES = [f'{yr} Final Mortality Predictions' for yr in range(2015, 2021)]
-
-def construct_output_map_path(year):
-    output_map_path = f'Hybrid Model/Accuracy Maps/{year}_accuracy_map'
-    return output_map_path
+SHAPE_PATH = '2022 USA County Shapefile/Filtered Files/2022_filtered_shapefile.shp'
+MORTALITY_PATH = 'Data/Mortality/Final Files/Mortality_final_rates.csv'
+MORTALITY_NAMES = ['FIPS'] + [f'{year} MR' for year in range(2010, 2023)]
 
 def load_shapefile(shapefile_path):
     shape = gpd.read_file(shapefile_path)
@@ -29,15 +23,26 @@ def load_mortality_rates(data_path, data_names):
     mort_df = mort_df.sort_values(by='FIPS').reset_index(drop=True)
     return mort_df
 
-def load_predictions(predictions_path, predictions_names):
-    preds_df = pd.read_csv(predictions_path, header=0, names=predictions_names)
-    preds_df = preds_df.astype(float)
-    preds_df = preds_df.reset_index(drop=True)
+def load_yearly_predictions():
+    preds_df = pd.DataFrame()
+    for year in range(2011,2023):
+        yearly_path = f'XGBoost/XGBoost Predictions/{year}_xgboost_predictions.csv'
+        yearly_names = ['FIPS'] + [f'{year} Preds']
+        yearly_df = pd.read_csv(yearly_path, header=0, names=yearly_names)
+        yearly_df['FIPS'] = yearly_df['FIPS'].astype(str).str.zfill(5)
+        yearly_df[f'{year} Preds'] = yearly_df[f'{year} Preds'].astype(float)
+
+        if preds_df.empty:
+            preds_df = yearly_df
+        else:
+            preds_df = pd.merge(preds_df, yearly_df, on='FIPS', how='outer')
+
+    preds_df = preds_df.sort_values(by='FIPS').reset_index(drop=True)
     return preds_df
 
 def calculate_accuracy(mort_df, preds_df, year):
     acc_df = mort_df[['FIPS']].copy()
-    acc_df[f'{year} Absolute Errors'] = abs(preds_df[f'{year} Final Mortality Predictions'] - mort_df[f'{year} Mortality rates'])
+    acc_df[f'{year} Absolute Errors'] = abs(preds_df[f'{year} Preds'] - mort_df[f'{year} MR'])
     max_abs_err = acc_df[f'{year} Absolute Errors'].max()
 
    # Accuracy calculation
@@ -55,21 +60,11 @@ def calculate_accuracy(mort_df, preds_df, year):
 def merge_data_shape(shape, acc_df):
     return shape.merge(acc_df, on='FIPS')
 
-def plot_accuracy_map(shape, year, output_map_path):
-    """ Plot and save the accuracy map """
-
+def construct_accuracy_map(shape, year):
     fig, main_ax = plt.subplots(figsize=(10, 5))
-    title = f'Accuracy Map for the Hybrid Model in {year}'
+    title = f'{year} XGBoost Accuracy Map'
     plt.title(title, size=16, weight='bold')
 
-    # Construct the map
-    construct_map(shape, fig, main_ax, year)
-
-    plt.savefig(output_map_path, bbox_inches=None, pad_inches=0, dpi=300)
-    # plt.show()
-    plt.close(fig)
-
-def construct_map(shape, fig, main_ax, year):
     # Alaska and Hawaii insets
     alaska_ax = fig.add_axes([0, -0.5, 1.4, 1.4]) 
     hawaii_ax = fig.add_axes([0.24, 0.1, 0.15, 0.15])  
@@ -108,6 +103,10 @@ def construct_map(shape, fig, main_ax, year):
     # Add the colorbar
     add_colorbar(main_ax, cmap)
 
+    plt.savefig(f'XGBoost/Efficacy/Accuracy Maps/{year}_xgb_acc_map', bbox_inches=None, pad_inches=0, dpi=300)
+    # plt.show()
+    plt.close(fig)
+
 def set_view_window(main_ax,alaska_ax,hawaii_ax):
     main_ax.get_xaxis().set_visible(False)
     main_ax.get_yaxis().set_visible(False)
@@ -130,14 +129,13 @@ def add_colorbar(main_ax, cmap):
     cbar.set_label('Accuracy Levels', fontsize=10, weight='bold')
 
 def main():
-    for year in range(2015, 2021):
-        output_map_path = construct_output_map_path(year)
+    for year in range(2011, 2023):
         shape = load_shapefile(SHAPE_PATH)
         mort_df = load_mortality_rates(MORTALITY_PATH, MORTALITY_NAMES)
-        preds_df = load_predictions(PREDICTIONS_PATH, PREDICTIONS_NAMES)
+        preds_df = load_yearly_predictions()
         acc_df = calculate_accuracy(mort_df, preds_df, year)
         shape = merge_data_shape(shape, acc_df)
-        plot_accuracy_map(shape, year, output_map_path)
+        construct_accuracy_map(shape, year)
         print(f'Plot printed for {year}.')
 
 if __name__ == "__main__":

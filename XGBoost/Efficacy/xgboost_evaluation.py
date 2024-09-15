@@ -1,9 +1,18 @@
 import pandas as pd
 import numpy as np
+import logging
 
 # Constants
 MORTALITY_PATH = 'Data/Mortality/Final Files/Mortality_final_rates.csv'
 MORTALITY_NAMES = ['FIPS'] + [f'{year} MR' for year in range(2010, 2023)]
+YEAR = 2022
+
+# Set up logging
+log_file = 'Log Files/xgboost_efficacy.log'
+logging.basicConfig(level=logging.INFO, format='%(message)s', handlers=[
+    logging.FileHandler(log_file, mode='w'),  # Overwrite the log file
+    logging.StreamHandler()
+])
 
 def load_mortality(mort_path, mort_names):
     mort_df = pd.read_csv(mort_path, header=0, names=mort_names)
@@ -29,7 +38,7 @@ def load_yearly_predictions():
     preds_df = preds_df.sort_values(by='FIPS').reset_index(drop=True)
     return preds_df
 
-def calculate_err_acc(mort_df, preds_df):
+def calculate_efficacy_metrics(mort_df, preds_df):
     acc_df = mort_df[['FIPS']].copy()
     metrics = {'Year': [], 'Avg Error': [], 'Max Error': [], 'Avg Accuracy': [], 
                'MSE': [], 'R2': [], 'MedAE': []}
@@ -61,14 +70,29 @@ def calculate_err_acc(mort_df, preds_df):
         metrics['MedAE'].append(medae)
     
     metrics_df = pd.DataFrame(metrics)
+    metrics_df['Avg Error'] = metrics_df['Avg Error'].round(2)  # round to 2 decimal places
+    metrics_df['Max Error'] = metrics_df['Max Error'].round(2)  # round to 2 decimal places
+    metrics_df['Avg Accuracy'] = (metrics_df['Avg Accuracy'] * 100).round(2).astype(str) + '%'  # multiply by 100, round to 2 decimal places, and add % sign
+    metrics_df['MSE'] = metrics_df['MSE'].round(2)  # round to 2 decimal places
+    metrics_df['R2'] = metrics_df['R2'].round(2)  # round to 2 decimal places
+    metrics_df['MedAE'] = metrics_df['MedAE'].round(2)  # round to 2 decimal places
     return metrics_df
+
+def print_top_errors(mort_df, preds_df, year=YEAR):
+    err_df = mort_df[['FIPS']].copy()
+    err_df[f'{year} Absolute Errors'] = abs(preds_df[f'{year} Preds'] - mort_df[f'{year} MR'])
+
+    top_errors_df = err_df.sort_values(by=f'{year} Absolute Errors', ascending=False).head(10)
+    top_errors_df_reset = top_errors_df.reset_index(drop=True)
+    logging.info(f'\n{top_errors_df_reset}')
 
 def main():
     mort_df = load_mortality(MORTALITY_PATH, MORTALITY_NAMES)
     preds_df = load_yearly_predictions()
-    metrics_df = calculate_err_acc(mort_df, preds_df)
+    metrics_df = calculate_efficacy_metrics(mort_df, preds_df)
     metrics_df = metrics_df.round(4)
-    print(metrics_df)
+    logging.info(metrics_df)
+    print_top_errors(mort_df, preds_df)
 
 if __name__ == "__main__":
     main()

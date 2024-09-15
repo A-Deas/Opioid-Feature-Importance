@@ -24,7 +24,7 @@ DATA = ['Mortality',
         'Single-Parent Household', 'Unemployed']
 
 # Set up logging
-log_file = 'Log Files/xgboost.log'
+log_file = 'Log Files/xgboost_model.log'
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%H:%M:%S', handlers=[
     logging.FileHandler(log_file, mode='w'),  # Overwrite the log file
     logging.StreamHandler()
