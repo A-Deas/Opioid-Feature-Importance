@@ -1,16 +1,22 @@
-from scipy import stats
 from scipy.stats import lognorm
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning)
+import logging
 
 # Constants
 MORTALITY_PATH = 'Data/Mortality/Final Files/Mortality_final_rates.csv'
-MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality Rates' for year in range(2010, 2023)]
+MORTALITY_NAMES = ['FIPS'] + [f'{year} MR' for year in range(2010, 2023)]
 PREDICTIONS_PATH = 'Autoencoder/Predictions/ae_mortality_predictions.csv'
 PREDICTIONS_NAMES = [f'{year} Preds' for year in range(2011, 2023)]
+YEAR = 2022 # for printing top errors
+
+# Set up logging
+log_file = 'Log Files/autoencoder_efficacy.log'
+logging.basicConfig(level=logging.INFO, format='%(message)s', handlers=[
+    logging.FileHandler(log_file, mode='w'),  # Overwrite the log file
+    logging.StreamHandler()
+])
 
 def load_mortality(mort_path, mort_names):
     mort_df = pd.read_csv(mort_path, header=0, names=mort_names)
@@ -19,7 +25,7 @@ def load_mortality(mort_path, mort_names):
     mort_df = mort_df.sort_values(by='FIPS').reset_index(drop=True)
     return mort_df
 
-def load_predictions(preds_path, preds_names):
+def load_predictions(preds_path=PREDICTIONS_PATH, preds_names=PREDICTIONS_NAMES):
     preds_df = pd.read_csv(preds_path, header=0, names=preds_names)
     preds_df[preds_names] = preds_df[preds_names].astype(float)
 
@@ -40,18 +46,18 @@ def load_predictions(preds_path, preds_names):
     preds_df = preds_df.iloc[:-3].reset_index(drop=True)
     return preds_df, predicted_shapes, predicted_locs, predicted_scales
 
-def calculate_err_acc(mort_df, preds_df):
+def calculate_efficacy_metrics(mort_df, preds_df):
     acc_df = mort_df[['FIPS']].copy()
     metrics = {'Year': [], 'Avg Error': [], 'Max Error': [], 'Avg Accuracy': [], 
                'MSE': [], 'R2': [], 'MedAE': []}
 
     for year in range(2011, 2023):
-        absolute_errors = abs(preds_df[f'{year} Preds'] - mort_df[f'{year} Mortality Rates'])
+        absolute_errors = abs(preds_df[f'{year} Preds'] - mort_df[f'{year} MR'])
         acc_df[f'{year} Absolute Errors'] = absolute_errors
         avg_err = np.mean(absolute_errors)
         max_err = absolute_errors.max()
         mse = np.mean(absolute_errors ** 2)
-        r2 = 1 - (np.sum((mort_df[f'{year} Mortality Rates'] - preds_df[f'{year} Preds']) ** 2) / np.sum((mort_df[f'{year} Mortality Rates'] - np.mean(mort_df[f'{year} Mortality Rates'])) ** 2))
+        r2 = 1 - (np.sum((mort_df[f'{year} MR'] - preds_df[f'{year} Preds']) ** 2) / np.sum((mort_df[f'{year} MR'] - np.mean(mort_df[f'{year} MR'])) ** 2))
         medae = np.median(absolute_errors)
 
         # Adjusting accuracy calculation
@@ -72,7 +78,13 @@ def calculate_err_acc(mort_df, preds_df):
         metrics['MedAE'].append(medae)
     
     metrics_df = pd.DataFrame(metrics)
-    return metrics_df
+    metrics_df['Avg Error'] = metrics_df['Avg Error'].round(2)  # round to 2 decimal places
+    metrics_df['Max Error'] = metrics_df['Max Error'].round(2)  # round to 2 decimal places
+    metrics_df['Avg Accuracy'] = (metrics_df['Avg Accuracy'] * 100).round(2).astype(str) + '%'  # multiply by 100, round to 2 decimal places, and add % sign
+    metrics_df['MSE'] = metrics_df['MSE'].round(2)  # round to 2 decimal places
+    metrics_df['R2'] = metrics_df['R2'].round(2)  # round to 2 decimal places
+    metrics_df['MedAE'] = metrics_df['MedAE'].round(2)  # round to 2 decimal places
+    logging.info(metrics_df)
 
 def kl_divergence_lognorm(shape1, loc1, scale1, shape2, loc2, scale2):
     sigma1, mu1 = shape1, np.log(scale1)
@@ -85,8 +97,12 @@ def wasserstein_distance_lognorm(shape1, loc1, scale1, shape2, loc2, scale2):
     return np.sqrt((mu1 - mu2)**2 + (sigma1 - sigma2)**2)
 
 def compare_distributions(mort_df, predicted_shapes, predicted_locs, predicted_scales):
+    # Create an empty list to store the results
+    results = {'Year': [], 'KL Divergence': [], 'Wasserstein Distance': []}
+
+    # Loop through each year to compare actual and predicted distributions
     for year in range(2011, 2023):
-        mort_rates = mort_df[f'{year} Mortality Rates'].values
+        mort_rates = mort_df[f'{year} MR'].values
         non_zero_mort_rates = mort_rates[mort_rates > 0]
         lognorm_params = lognorm.fit(non_zero_mort_rates)
         shape, loc, scale = lognorm_params
@@ -95,16 +111,33 @@ def compare_distributions(mort_df, predicted_shapes, predicted_locs, predicted_s
         predicted_loc = predicted_locs[year]
         predicted_scale = predicted_scales[year]
 
+        # Compute the KL divergence and Wasserstein distance
         kl_div = kl_divergence_lognorm(shape, loc, scale, predicted_shape, predicted_loc, predicted_scale)
         w_dist = wasserstein_distance_lognorm(shape, loc, scale, predicted_shape, predicted_loc, predicted_scale)
 
-        # Round values to two decimal places
-        kl_div = round(kl_div, 4)
-        w_dist = round(w_dist, 2)
+        # Round values
+        kl_div = round(kl_div, 3)
+        w_dist = round(w_dist, 3)
 
-        print(f'Year: {year}')
-        print(f'KL Divergence: {kl_div}')
-        print(f'Wasserstein Distance: {w_dist}\n')
+        # Store the results in the dictionary
+        results['Year'].append(year)
+        results['KL Divergence'].append(kl_div)
+        results['Wasserstein Distance'].append(w_dist)
+
+    # Convert the results dictionary to a DataFrame for logging.infoing
+    results_df = pd.DataFrame(results)
+    logging.info(f'\n{results_df}')
+
+def plot_comparisons(mort_df, predicted_shapes, predicted_locs, predicted_scales):
+    for year in range(2011, 2023):
+        mort_rates = mort_df[f'{year} MR'].values
+        non_zero_mort_rates = mort_rates[mort_rates > 0]
+        lognorm_params = lognorm.fit(non_zero_mort_rates)
+        shape, loc, scale = lognorm_params
+    
+        predicted_shape = predicted_shapes[year]
+        predicted_loc = predicted_locs[year]
+        predicted_scale = predicted_scales[year]
 
         # Visual comparison of the distributions
         plt.figure(figsize=(10, 5))
@@ -117,21 +150,28 @@ def compare_distributions(mort_df, predicted_shapes, predicted_locs, predicted_s
         plt.plot(x, lognorm.pdf(x, predicted_shape, predicted_loc, predicted_scale), label='Predicted Distribution', color='red', linestyle='dashed')
 
         plt.title(f'Distribution Comparison for Year {year}')
-        plt.xlabel('Mortality Rates')
+        plt.xlabel('MR')
         plt.ylabel('Density')
         plt.legend()
         plt.tight_layout()
-        plt.savefig(f'Autoencoder/Distribution Comparison/{year}_distribution_comparison.png')
+        plt.savefig(f'Autoencoder/Efficacy/Distribution Comparison/{year}_distribution_comparison.png')
         plt.close()
+
+def print_top_errors(mort_df, preds_df, year=YEAR):
+    err_df = mort_df[['FIPS']].copy()
+    err_df[f'{year} Absolute Errors'] = abs(preds_df[f'{year} Preds'] - mort_df[f'{year} MR'])
+
+    top_errors_df = err_df.sort_values(by=f'{year} Absolute Errors', ascending=False).head(10)
+    top_errors_df_reset = top_errors_df.reset_index(drop=True)
+    logging.info(f'\n{top_errors_df_reset}')
 
 def main():
     mort_df = load_mortality(MORTALITY_PATH, MORTALITY_NAMES)
-    preds_df, predicted_shapes, predicted_locs, predicted_scales = load_predictions(PREDICTIONS_PATH, PREDICTIONS_NAMES)
-    metrics_df = calculate_err_acc(mort_df, preds_df)
-    metrics_df = metrics_df.round(4)
-    print(metrics_df)
-
+    preds_df, predicted_shapes, predicted_locs, predicted_scales = load_predictions()
+    calculate_efficacy_metrics(mort_df, preds_df)
     compare_distributions(mort_df, predicted_shapes, predicted_locs, predicted_scales)
+    plot_comparisons(mort_df, predicted_shapes, predicted_locs, predicted_scales)
+    print_top_errors(mort_df, preds_df)
 
 if __name__ == "__main__":
     main()

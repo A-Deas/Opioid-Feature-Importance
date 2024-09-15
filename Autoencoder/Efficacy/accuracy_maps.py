@@ -11,6 +11,8 @@ warnings.filterwarnings("ignore", category=UserWarning)
 SHAPE_PATH = '2022 USA County Shapefile/Filtered Files/2022_filtered_shapefile.shp'
 MORTALITY_PATH = 'Data/Mortality/Final Files/Mortality_final_rates.csv'
 MORTALITY_NAMES = ['FIPS'] + [f'{year} MR' for year in range(2010, 2023)]
+PREDICTIONS_PATH = 'Autoencoder/Predictions/ae_mortality_predictions.csv'
+PREDICTIONS_NAMES = [f'{year} Preds' for year in range(2011, 2023)]
 
 def load_shapefile(shapefile_path):
     shape = gpd.read_file(shapefile_path)
@@ -23,22 +25,26 @@ def load_mortality_rates(data_path, data_names):
     mort_df = mort_df.sort_values(by='FIPS').reset_index(drop=True)
     return mort_df
 
-def load_yearly_predictions():
-    preds_df = pd.DataFrame()
-    for year in range(2011,2023):
-        yearly_path = f'XGBoost/XGBoost Predictions/{year}_xgboost_predictions.csv'
-        yearly_names = ['FIPS'] + [f'{year} Preds']
-        yearly_df = pd.read_csv(yearly_path, header=0, names=yearly_names)
-        yearly_df['FIPS'] = yearly_df['FIPS'].astype(str).str.zfill(5)
-        yearly_df[f'{year} Preds'] = yearly_df[f'{year} Preds'].astype(float)
+def load_predictions(preds_path=PREDICTIONS_PATH, preds_names=PREDICTIONS_NAMES):
+    preds_df = pd.read_csv(preds_path, header=0, names=preds_names)
+    preds_df[preds_names] = preds_df[preds_names].astype(float)
 
-        if preds_df.empty:
-            preds_df = yearly_df
-        else:
-            preds_df = pd.merge(preds_df, yearly_df, on='FIPS', how='outer')
+    # Initialize dictionaries to store the predicted means and standard deviations
+    predicted_shapes = {}
+    predicted_locs = {}
+    predicted_scales = {}
+    start_year = 2011
 
-    preds_df = preds_df.sort_values(by='FIPS').reset_index(drop=True)
-    return preds_df
+    # Extract the last three rows: (shape, location, scale)
+    for i, col in enumerate(preds_names):
+        year = start_year + i
+        predicted_shapes[year] = preds_df[col].iloc[-3]
+        predicted_locs[year] = preds_df[col].iloc[-2]
+        predicted_scales[year] = preds_df[col].iloc[-1]
+
+    # Drop the last three rows from the predicted rates
+    preds_df = preds_df.iloc[:-3].reset_index(drop=True)
+    return preds_df, predicted_shapes, predicted_locs, predicted_scales
 
 def calculate_accuracy(mort_df, preds_df, year):
     acc_df = mort_df[['FIPS']].copy()
@@ -62,7 +68,7 @@ def merge_data_shape(shape, acc_df):
 
 def construct_accuracy_map(shape, year):
     fig, main_ax = plt.subplots(figsize=(10, 5))
-    title = f'{year} XGBoost Accuracy Map'
+    title = f'{year} Autoencoder Accuracy Map'
     plt.title(title, size=16, weight='bold')
 
     # Alaska and Hawaii insets
@@ -103,7 +109,7 @@ def construct_accuracy_map(shape, year):
     # Add the colorbar
     add_colorbar(main_ax, cmap)
 
-    plt.savefig(f'XGBoost/Efficacy/Accuracy Maps/{year}_xgb_acc_map', bbox_inches=None, pad_inches=0, dpi=300)
+    plt.savefig(f'Autoencoder/Efficacy/Accuracy Maps/{year}_ae_acc_map', bbox_inches=None, pad_inches=0, dpi=300)
     # plt.show()
     plt.close(fig)
 
@@ -131,7 +137,7 @@ def add_colorbar(main_ax, cmap):
 def main():
     shape = load_shapefile(SHAPE_PATH)
     mort_df = load_mortality_rates(MORTALITY_PATH, MORTALITY_NAMES)
-    preds_df = load_yearly_predictions()
+    preds_df, predicted_shapes, predicted_locs, predicted_scales = load_predictions()
     
     for year in range(2011, 2023):
         acc_df = calculate_accuracy(mort_df, preds_df, year)

@@ -5,7 +5,7 @@ import logging
 # Constants
 MORTALITY_PATH = 'Data/Mortality/Final Files/Mortality_final_rates.csv'
 MORTALITY_NAMES = ['FIPS'] + [f'{year} MR' for year in range(2010, 2023)]
-YEAR = 2022
+YEAR = 2022 # for printing top errors
 
 # Set up logging
 log_file = 'Log Files/xgboost_efficacy.log'
@@ -76,7 +76,7 @@ def calculate_efficacy_metrics(mort_df, preds_df):
     metrics_df['MSE'] = metrics_df['MSE'].round(2)  # round to 2 decimal places
     metrics_df['R2'] = metrics_df['R2'].round(2)  # round to 2 decimal places
     metrics_df['MedAE'] = metrics_df['MedAE'].round(2)  # round to 2 decimal places
-    return metrics_df
+    logging.info(metrics_df)
 
 def print_top_errors(mort_df, preds_df, year=YEAR):
     err_df = mort_df[['FIPS']].copy()
@@ -89,9 +89,7 @@ def print_top_errors(mort_df, preds_df, year=YEAR):
 def main():
     mort_df = load_mortality(MORTALITY_PATH, MORTALITY_NAMES)
     preds_df = load_yearly_predictions()
-    metrics_df = calculate_efficacy_metrics(mort_df, preds_df)
-    metrics_df = metrics_df.round(4)
-    logging.info(metrics_df)
+    calculate_efficacy_metrics(mort_df, preds_df)
     print_top_errors(mort_df, preds_df)
 
 if __name__ == "__main__":
