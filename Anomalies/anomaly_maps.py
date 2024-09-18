@@ -4,8 +4,6 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from scipy.stats import norm
 from scipy.stats import lognorm
-# import warnings
-# warnings.filterwarnings("ignore", category=UserWarning)
 
 # Constants
 SHAPE_PATH = '2022 USA County Shapefile/Filtered Files/2022_filtered_shapefile.shp'
