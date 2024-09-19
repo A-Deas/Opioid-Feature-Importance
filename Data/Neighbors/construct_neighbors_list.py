@@ -1,8 +1,10 @@
 import geopandas as gpd
 import pandas as pd
 
+year = 2020
+
 # Load the shapefile
-shapefile = gpd.read_file('2022 USA County Shapefile/Filtered Files/2022_filtered_shapefile.shp')
+shapefile = gpd.read_file(f'{year} USA County Shapefile/Filtered Files/{year}_filtered_shapefile.shp')
 
 # Initialize an empty dictionary to store neighbors
 neighbors = {}
@@ -40,5 +42,5 @@ for county in island_counties:
 neighbors_df = neighbors_df.sort_values(by='FIPS').reset_index(drop=True)
 
 # Save to CSV
-neighbors_df.to_csv('Data/Mortality/Neighbor Files/2022_neighbors_list.csv', index=False)
+neighbors_df.to_csv(f'Data/Neighbors/{year}_neighbors_list.csv', index=False)
 print('Neighbor file saved.')

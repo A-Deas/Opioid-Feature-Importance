@@ -130,10 +130,37 @@ def impute_data(variable_df, var):
 
     return variable_df
 
+def impute_old_ct_data(variable_df, var, year, old_ct_fips):
+    neighs_path = 'Data/Neighbors/2020_neighbors_list.csv'
+    neighs_names = ['FIPS', 'Neighbors']
+    neighs_df = pd.read_csv(neighs_path, header=None, names=neighs_names)
+
+    neighs_df['FIPS'] = neighs_df['FIPS'].astype(str).str.zfill(5)
+    neighs_df['Neighbors'] = neighs_df['Neighbors'].apply(
+        lambda x: x.split(',') if isinstance(x, str) and ',' in x else ([] if pd.isna(x) or x == '' else [x])
+    )
+
+    variable_df = variable_df.set_index('FIPS')
+    for fips, row in variable_df.iterrows():
+        if fips in old_ct_fips:
+            if row[f'{year} {var}'] == -9.0:
+                neighbors = neighs_df.loc[neighs_df['FIPS'] == fips, 'Neighbors']
+                neighbors = neighbors.values[0]
+                available_neighbors = [neighbor for neighbor in neighbors if neighbor in variable_df.index and variable_df.loc[neighbor, f'{year} {var}'] != -9]
+
+                if len(available_neighbors) > 0:
+                    new_value = sum([variable_df.loc[neighbor, f'{year} {var}'] for neighbor in available_neighbors]) / len(available_neighbors)
+                    variable_df.loc[fips, f'{year} {var}'] = new_value
+                else:
+                    print("ERROR: A CT county is missing all neighbors.")
+    variable_df = variable_df.reset_index()
+    yearly_ct_df = variable_df[variable_df['FIPS'].isin(old_ct_fips)][['FIPS', f'{year} {var}']]
+    return yearly_ct_df
+
 def fix_connecticut(variable_df, var):
     for year in range(2010, 2022):
         old_ct_fips = ['09001', '09003', '09005', '09007', '09009', '09011', '09013', '09015']
-        yearly_ct_df = variable_df[variable_df['FIPS'].isin(old_ct_fips)][['FIPS', f'{year} {var}']]
+        yearly_ct_df = impute_old_ct_data(variable_df, var, year, old_ct_fips)
 
         old_shapefile_path = '2020 USA County Shapefile/Filtered Files/2020_filtered_shapefile.shp'
         new_shapefile_path = '2022 USA County Shapefile/Filtered Files/2022_filtered_shapefile.shp'
@@ -232,7 +259,7 @@ def save_final_rates(variable_df, var):
 
     # Save the datafram to a csv
     variable_df.to_csv(output_path, index=False)
-    print(f'Rates saved for {var}.\n')
+    print(f'Rates saved for {var}.')
 
 def main():
     df_2010, df_2014, df_2016, df_2018, df_2020, df_2022 = load_dataframes()

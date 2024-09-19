@@ -36,6 +36,33 @@ def clean_rates(year):
     mort_df[f'{year} MR'] = mort_df[f'{year} MR'].round(2)
     return mort_df
 
+def impute_old_ct_data(mort_df, year):
+    neighs_path = 'Data/Neighbors/2020_neighbors_list.csv'
+    neighs_names = ['FIPS', 'Neighbors']
+    neighs_df = pd.read_csv(neighs_path, header=None, names=neighs_names)
+
+    neighs_df['FIPS'] = neighs_df['FIPS'].astype(str).str.zfill(5)
+    neighs_df['Neighbors'] = neighs_df['Neighbors'].apply(
+        lambda x: x.split(',') if isinstance(x, str) and ',' in x else ([] if pd.isna(x) or x == '' else [x])
+    )
+
+    mort_df = mort_df.set_index('FIPS')
+    for fips, row in mort_df.iterrows():
+        if fips in ['09001', '09003', '09005', '09007', '09009', '09011', '09013', '09015']:
+            if row[f'{year} MR'] == -9.0:
+                neighbors = neighs_df.loc[neighs_df['FIPS'] == fips, 'Neighbors']
+                neighbors = neighbors.values[0]
+                available_neighbors = [neighbor for neighbor in neighbors if neighbor in mort_df.index and mort_df.loc[neighbor, f'{year} MR'] != -9]
+
+                if len(available_neighbors) > 0:
+                    new_value = sum([mort_df.loc[neighbor, f'{year} MR'] for neighbor in available_neighbors]) / len(available_neighbors)
+                    mort_df.loc[fips, f'{year} MR'] = new_value
+                else:
+                    print("ERROR: A CT county is missing all neighbors.")
+    mort_df = mort_df.reset_index()
+    ct_df = mort_df[mort_df['FIPS'].str.startswith('09')]
+    return ct_df
+
 def fix_connecticut(mort_df, year):
     # Load 2020 and 2022 shapefiles for Connecticut
     # 2020 shapefile has the old county structure (matches will all years: 2010 - 2021)
@@ -55,7 +82,7 @@ def fix_connecticut(mort_df, year):
     new_ct_shape = new_ct_shape.to_crs(epsg=26918)  # UTM zone 18N
 
     # Get the old CT data
-    ct_df = mort_df[mort_df['FIPS'].str.startswith('09')]
+    ct_df = impute_old_ct_data(mort_df, year)
     
     # Merge the old CT data with the old CT shape
     old_ct_shape = old_ct_shape.merge(ct_df, how='left', on='FIPS')
@@ -115,8 +142,10 @@ def filter_fips_codes(year, mort_df, shape):
 def main():
     for year in range(2010,2023):
         mort_df = clean_rates(year)
+
         if year < 2022: # In 2022, the data for CT is genuinely missing
             mort_df = fix_connecticut(mort_df, year) 
+
         shape = load_shapefile()
         filter_fips_codes(year, mort_df, shape)
 
