@@ -74,11 +74,6 @@ class Tensors(Dataset):
 
         # Append the lognormal parameters to the mortality rates
         mort_rates = self.mort_df[f'{year+1} Mortality Rates'].values
-        non_zero_mort_rates = mort_rates[mort_rates > 0]
-        lognorm_params = lognorm.fit(non_zero_mort_rates)
-        shape, loc, scale = lognorm_params
-        mort_rates = np.append(mort_rates, [shape, loc, scale])
-
         mort_rates_array = np.array(mort_rates)
         mort_rates_tensor = torch.tensor(mort_rates_array, dtype=torch.float32)
         return yearly_data_tensor, mort_rates_tensor
@@ -99,7 +94,7 @@ class Autoencoder_model(nn.Module):
             nn.Sequential(
                 nn.Linear(1000, 2000),
                 nn.ReLU(),
-                nn.Linear(2000, NUM_COUNTIES + 3) ) ])
+                nn.Linear(2000, NUM_COUNTIES) ) ])
 
     def forward(self, x):
         x = self.conv1d(x).squeeze(1)  # Remove the channel dimension after conv1d

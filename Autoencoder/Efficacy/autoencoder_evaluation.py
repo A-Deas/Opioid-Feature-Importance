@@ -28,6 +28,12 @@ def load_mortality(mort_path, mort_names):
 def load_predictions(preds_path=PREDICTIONS_PATH, preds_names=PREDICTIONS_NAMES):
     preds_df = pd.read_csv(preds_path, header=0, names=preds_names)
     preds_df[preds_names] = preds_df[preds_names].astype(float)
+    preds_df = preds_df.reset_index(drop=True)
+    return preds_df
+
+def load_predictions_alternate(preds_path=PREDICTIONS_PATH, preds_names=PREDICTIONS_NAMES):
+    preds_df = pd.read_csv(preds_path, header=0, names=preds_names)
+    preds_df[preds_names] = preds_df[preds_names].astype(float)
 
     # Initialize dictionaries to store the predicted means and standard deviations
     predicted_shapes = {}
@@ -167,10 +173,11 @@ def print_top_errors(mort_df, preds_df, year=YEAR):
 
 def main():
     mort_df = load_mortality(MORTALITY_PATH, MORTALITY_NAMES)
-    preds_df, predicted_shapes, predicted_locs, predicted_scales = load_predictions()
+    # preds_df, predicted_shapes, predicted_locs, predicted_scales = load_predictions()
+    preds_df = load_predictions()
     calculate_efficacy_metrics(mort_df, preds_df)
-    compare_distributions(mort_df, predicted_shapes, predicted_locs, predicted_scales)
-    plot_comparisons(mort_df, predicted_shapes, predicted_locs, predicted_scales)
+    # compare_distributions(mort_df, predicted_shapes, predicted_locs, predicted_scales)
+    # plot_comparisons(mort_df, predicted_shapes, predicted_locs, predicted_scales)
     print_top_errors(mort_df, preds_df)
 
 if __name__ == "__main__":
