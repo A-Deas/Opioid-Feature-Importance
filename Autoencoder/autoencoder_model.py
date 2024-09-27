@@ -20,7 +20,7 @@ MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality Rates' for year in range(2010, 
 LOSS_FUNCTION = nn.L1Loss() # PyTorch's built-in loss function for MAE, measures the absolute difference between the predicted values and the actual values     
 DATA_YEARS = range(2010, 2022) # Can't use data in 2022 as we are not making 2023 predictions
 NUM_COUNTIES = 3144
-NUM_EPOCHS = 500
+NUM_EPOCHS = 100
 PATIENCE = 10
 
 # Set random seeds for reproducibility

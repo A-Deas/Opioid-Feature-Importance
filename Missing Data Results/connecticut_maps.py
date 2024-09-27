@@ -143,7 +143,7 @@ def plot_comparison_heat_map(shape_2020, shape_2022, year):
     cbar.set_ticklabels(tick_labels)
 
     # Save the plot
-    output_map_path = f'Heat Maps/Connecticut/{year}_ct_comparison.png'
+    output_map_path = f'Missing Data Results/Connecticut/{year}_ct_comparison.png'
     plt.savefig(output_map_path, bbox_inches='tight', pad_inches=0.1, dpi=300)
     plt.close(fig)
 

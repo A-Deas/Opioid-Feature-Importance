@@ -79,7 +79,7 @@ def plot_heat_map(shape, year):
     add_color_bar(main_ax)
 
     # Save the map
-    output_map_path = f'Heat Maps/Mortality Maps/Final/{year}_final_mort_heat_map.png'
+    output_map_path = f'Missing Data Results/Mortality Maps/Final/{year}_final_mort_heat_map.png'
     plt.savefig(output_map_path, bbox_inches=None, pad_inches=0, dpi=300)
     # plt.show()
     plt.close(fig)

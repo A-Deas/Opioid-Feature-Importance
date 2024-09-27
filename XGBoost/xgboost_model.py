@@ -14,7 +14,9 @@ OPTIMIZED_XGBOOST = xgb.XGBRegressor(
     max_depth=5,
     n_estimators=300,
     subsample=0.9,
-    random_state=42)
+    random_state=42,
+    objective='reg:absoluteerror'  # Set the loss function to MAE
+    )
 KF = KFold(n_splits=5, shuffle=True, random_state=42)
 DATA = ['Mortality',
         'Aged 17 or Younger', 'Aged 65 or Older', 'Below Poverty', 'Crowding', 

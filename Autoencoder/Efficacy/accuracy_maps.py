@@ -28,6 +28,12 @@ def load_mortality_rates(data_path, data_names):
 def load_predictions(preds_path=PREDICTIONS_PATH, preds_names=PREDICTIONS_NAMES):
     preds_df = pd.read_csv(preds_path, header=0, names=preds_names)
     preds_df[preds_names] = preds_df[preds_names].astype(float)
+    preds_df = preds_df.reset_index(drop=True)
+    return preds_df
+
+def load_predictions_alt(preds_path=PREDICTIONS_PATH, preds_names=PREDICTIONS_NAMES):
+    preds_df = pd.read_csv(preds_path, header=0, names=preds_names)
+    preds_df[preds_names] = preds_df[preds_names].astype(float)
 
     # Initialize dictionaries to store the predicted means and standard deviations
     predicted_shapes = {}
@@ -69,7 +75,7 @@ def merge_data_shape(shape, acc_df):
 def construct_accuracy_map(shape, year):
     fig, main_ax = plt.subplots(figsize=(10, 5))
     title = f'{year} Autoencoder Accuracy Map'
-    plt.title(title, size=16, weight='bold')
+    # plt.title(title, size=16, weight='bold')
 
     # Alaska and Hawaii insets
     alaska_ax = fig.add_axes([0, -0.5, 1.4, 1.4]) 
@@ -109,8 +115,8 @@ def construct_accuracy_map(shape, year):
     # Add the colorbar
     add_colorbar(main_ax, cmap)
 
-    plt.savefig(f'Autoencoder/Efficacy/Accuracy Maps/{year}_ae_acc_map', bbox_inches=None, pad_inches=0, dpi=300)
-    # plt.show()
+    # plt.savefig(f'Autoencoder/Efficacy/Accuracy Maps/{year}_ae_acc_map', bbox_inches=None, pad_inches=0, dpi=300)
+    plt.show()
     plt.close(fig)
 
 def set_view_window(main_ax,alaska_ax,hawaii_ax):
@@ -137,9 +143,9 @@ def add_colorbar(main_ax, cmap):
 def main():
     shape = load_shapefile(SHAPE_PATH)
     mort_df = load_mortality_rates(MORTALITY_PATH, MORTALITY_NAMES)
-    preds_df, predicted_shapes, predicted_locs, predicted_scales = load_predictions()
+    preds_df = load_predictions()
     
-    for year in range(2011, 2023):
+    for year in range(2022, 2023):
         acc_df = calculate_accuracy(mort_df, preds_df, year)
         shape = merge_data_shape(shape, acc_df)
         construct_accuracy_map(shape, year)
