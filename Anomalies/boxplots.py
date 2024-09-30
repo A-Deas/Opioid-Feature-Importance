@@ -4,6 +4,7 @@ from scipy import stats
 from scipy.stats import lognorm
 import matplotlib.pyplot as plt
 import seaborn as sns
+import logging
 
 DATA = ['Mortality', 
         'Aged 17 or Younger', 'Aged 65 or Older', 'Below Poverty', 'Crowding', 
@@ -12,6 +13,13 @@ DATA = ['Mortality',
         'Multi-Unit Structures', 'No High School Diploma', 'No Vehicle', 
         'Single-Parent Household', 'Unemployed']
 TAIL = 2
+
+# Set up logging
+log_file = 'Log Files/anomaly_means.log'
+logging.basicConfig(level=logging.INFO, format='%(message)s', handlers=[
+    logging.FileHandler(log_file, mode='w'),  # Overwrite the log file
+    logging.StreamHandler()
+])
 
 def construct_data_df():
     data_df = pd.DataFrame()
@@ -61,7 +69,7 @@ def boxplots(data_df, year):
     for feature in DATA:
         if feature != 'Mortality':
             cold_means[feature] = data_df.loc[data_df['County Category'] == 'Cold', f'{year} {feature} Rates'].mean()
-
+    
     # Sort features based on 'Hot' means
     sorted_features = sorted(hot_means, key=hot_means.get, reverse=True)
 
@@ -109,6 +117,12 @@ def hot_anomaly_summary(hot_means_by_year):
     # Sort the DataFrame by the average mean
     hot_means_df = hot_means_df.sort_values(by='Average', ascending=True)
 
+    # Print out the calculated means
+    hot_means_df_flipped_for_printing = hot_means_df.sort_values(by='Average', ascending=False)
+    logging.info(f"Average means in hot counties:")
+    for feature, mean in hot_means_df_flipped_for_printing['Average'].items():
+        logging.info(f"{feature}: {mean:.2f}")
+
     # Color the bars on the importance plot
     num_years = len(hot_means_by_year)
     colors = list(plt.cm.tab20.colors[:num_years]) + ['black']  # Add black for the 'Average' column
@@ -132,6 +146,12 @@ def cold_anomaly_summary(cold_means_by_year):
 
     # Sort the DataFrame by the average mean
     cold_means_df = cold_means_df.sort_values(by='Average', ascending=False)
+
+    # Print out the calculated means
+    cold_means_df_flipped_for_printing = cold_means_df.sort_values(by='Average', ascending=True)
+    logging.info(f"\nAverage means in cold counties:")
+    for feature, mean in cold_means_df_flipped_for_printing['Average'].items():
+        logging.info(f"{feature}: {mean:.2f}")
 
     # Color the bars on the importance plot
     num_years = len(cold_means_by_year)

@@ -41,7 +41,7 @@ def construct_histogram(mort_df, preds_df, year):
     plt.xlabel('Absolute Error', fontsize=12, weight='bold')
     plt.ylabel('Frequency', fontsize=12, weight='bold')
 
-    if year == 2022:
+    if year >= 2021:
         tick_positions = np.arange(0, max_error+20, 20)
     else:    
         tick_positions = np.arange(0, max_error+10, 10)
