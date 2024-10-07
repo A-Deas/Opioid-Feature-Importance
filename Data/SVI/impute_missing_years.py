@@ -5,7 +5,7 @@ from tobler.area_weighted import area_interpolate
 # Constants
 SVI_VAR_LIST = {
     'EPL_POV': 'Below Poverty',
-    'EPL_UNEMP': 'Unemployed',
+    'EPL_UNEMP': 'Unemployment',
     'EPL_NOHSDP': 'No High School Diploma',
     'EPL_AGE65': 'Aged 65 or Older',
     'EPL_AGE17': 'Aged 17 or Younger',
@@ -239,7 +239,7 @@ def fix_fips(shape, variable_df, var):
     
     return variable_df
 
-def save_final_rates(variable_df, var):
+def save_interim_rates(variable_df, var):
 
     plain_english_var = SVI_VAR_LIST.get(var, '')
     output_path = f'Data/SVI/Interim Files/{plain_english_var}_interim.csv'
@@ -270,7 +270,7 @@ def main():
         variable_df = fix_connecticut(variable_df, var)
         shape = load_shapefile(SHAPE_PATH)
         variable_df = fix_fips(shape, variable_df, var)
-        save_final_rates(variable_df, var)
+        save_interim_rates(variable_df, var)
 
 if __name__ == "__main__":
     main()

@@ -4,7 +4,7 @@ FEATURE_LIST = ['Aged 17 or Younger', 'Aged 65 or Older', 'Below Poverty', 'Crow
                 # 'Disability', 
                 'Group Quarters', 'Limited English Ability', 'Minority Status', 'Mobile Homes', 
                 'Multi-Unit Structures', 'No High School Diploma', 'No Vehicle', 
-                'Single-Parent Household', 'Unemployed']
+                'Single-Parent Household', 'Unemployment']
 
 def load_neighbors():
     neighs_path = 'Data/Neighbors/2022_neighbors_list.csv'

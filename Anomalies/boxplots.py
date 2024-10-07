@@ -11,7 +11,7 @@ DATA = ['Mortality',
         # 'Disability', 
         'Group Quarters', 'Limited English Ability', 'Minority Status', 'Mobile Homes', 
         'Multi-Unit Structures', 'No High School Diploma', 'No Vehicle', 
-        'Single-Parent Household', 'Unemployed']
+        'Single-Parent Household', 'Unemployment']
 TAIL = 2
 
 # Set up logging

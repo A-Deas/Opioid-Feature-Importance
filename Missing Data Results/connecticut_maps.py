@@ -133,7 +133,7 @@ def plot_comparison_heat_map(shape_2020, shape_2022, year):
     # Add colorbar 
     sm = ScalarMappable(cmap='RdYlBu_r', norm=norm)
     sm.set_array([])
-    cbar = fig.colorbar(sm, ax=axes, orientation='vertical', fraction=0.02, pad=0.04)
+    cbar = fig.colorbar(sm, ax=axes, orientation='horizontal', fraction=0.05, pad=0.1)
 
     # Customize tick labels 
     tick_values = np.linspace(vmin, vmax, 5)  # Adjust number of ticks if needed

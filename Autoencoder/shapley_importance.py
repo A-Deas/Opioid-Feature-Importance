@@ -15,7 +15,7 @@ FEATURES = ['Aged 17 or Younger', 'Aged 65 or Older', 'Below Poverty', 'Crowding
             # 'Disability', 
             'Group Quarters', 'Limited English Ability', 'Minority Status', 'Mobile Homes', 
             'Multi-Unit Structures', 'No High School Diploma', 'No Vehicle', 
-            'Single-Parent Household', 'Unemployed']
+            'Single-Parent Household', 'Unemployment']
 NUM_VARIABLES = len(FEATURES)
 MORTALITY_PATH = 'Data/Mortality/Final Files/Mortality_final_rates.csv'
 MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality Rates' for year in range(2010, 2023)]  
