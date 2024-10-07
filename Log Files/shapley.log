@@ -1,50 +1,50 @@
-16:07:41 Input tensor shape: torch.Size([1, 13, 3144])
-16:07:41 shap_values shape: (13, 3144)
+09:54:44 Input tensor shape: torch.Size([1, 13, 3144])
+09:54:45 shap_values shape: (13, 3144)
 
-16:07:41 Input tensor shape: torch.Size([1, 13, 3144])
-16:07:42 shap_values shape: (13, 3144)
+09:54:45 Input tensor shape: torch.Size([1, 13, 3144])
+09:54:46 shap_values shape: (13, 3144)
 
-16:07:42 Input tensor shape: torch.Size([1, 13, 3144])
-16:07:42 shap_values shape: (13, 3144)
+09:54:46 Input tensor shape: torch.Size([1, 13, 3144])
+09:54:46 shap_values shape: (13, 3144)
 
-16:07:42 Input tensor shape: torch.Size([1, 13, 3144])
-16:07:43 shap_values shape: (13, 3144)
+09:54:46 Input tensor shape: torch.Size([1, 13, 3144])
+09:54:47 shap_values shape: (13, 3144)
 
-16:07:43 Input tensor shape: torch.Size([1, 13, 3144])
-16:07:43 shap_values shape: (13, 3144)
+09:54:47 Input tensor shape: torch.Size([1, 13, 3144])
+09:54:47 shap_values shape: (13, 3144)
 
-16:07:43 Input tensor shape: torch.Size([1, 13, 3144])
-16:07:44 shap_values shape: (13, 3144)
+09:54:47 Input tensor shape: torch.Size([1, 13, 3144])
+09:54:48 shap_values shape: (13, 3144)
 
-16:07:44 Input tensor shape: torch.Size([1, 13, 3144])
-16:07:44 shap_values shape: (13, 3144)
+09:54:48 Input tensor shape: torch.Size([1, 13, 3144])
+09:54:48 shap_values shape: (13, 3144)
 
-16:07:44 Input tensor shape: torch.Size([1, 13, 3144])
-16:07:45 shap_values shape: (13, 3144)
+09:54:48 Input tensor shape: torch.Size([1, 13, 3144])
+09:54:49 shap_values shape: (13, 3144)
 
-16:07:45 Input tensor shape: torch.Size([1, 13, 3144])
-16:07:45 shap_values shape: (13, 3144)
+09:54:49 Input tensor shape: torch.Size([1, 13, 3144])
+09:54:49 shap_values shape: (13, 3144)
 
-16:07:45 Input tensor shape: torch.Size([1, 13, 3144])
-16:07:46 shap_values shape: (13, 3144)
+09:54:49 Input tensor shape: torch.Size([1, 13, 3144])
+09:54:50 shap_values shape: (13, 3144)
 
-16:07:46 Input tensor shape: torch.Size([1, 13, 3144])
-16:07:47 shap_values shape: (13, 3144)
+09:54:50 Input tensor shape: torch.Size([1, 13, 3144])
+09:54:50 shap_values shape: (13, 3144)
 
-16:07:47 Input tensor shape: torch.Size([1, 13, 3144])
-16:07:47 shap_values shape: (13, 3144)
+09:54:50 Input tensor shape: torch.Size([1, 13, 3144])
+09:54:51 shap_values shape: (13, 3144)
 
-16:07:47 Average SHAP Value for each variable:
-16:07:47 Single-Parent Household: 0.00027
-16:07:47 Limited English Ability: 0.00029
-16:07:47 Group Quarters: 0.00038
-16:07:47 Below Poverty: 0.00041
-16:07:47 Minority Status: 0.00081
-16:07:47 Mobile Homes: 0.00093
-16:07:47 Unemployed: 0.00116
-16:07:47 Aged 17 or Younger: 0.00120
-16:07:47 No High School Diploma: 0.00122
-16:07:47 Aged 65 or Older: 0.00131
-16:07:47 Multi-Unit Structures: 0.00136
-16:07:47 No Vehicle: 0.00137
-16:07:47 Crowding: 0.00143
+09:54:51 Average SHAP Value for each variable:
+09:54:51 Single-Parent Household: 0.00027
+09:54:51 Limited English Ability: 0.00029
+09:54:51 Group Quarters: 0.00038
+09:54:51 Below Poverty: 0.00041
+09:54:51 Minority Status: 0.00081
+09:54:51 Mobile Homes: 0.00093
+09:54:51 Unemployment: 0.00116
+09:54:51 Aged 17 or Younger: 0.00120
+09:54:51 No High School Diploma: 0.00122
+09:54:51 Aged 65 or Older: 0.00131
+09:54:51 Multi-Unit Structures: 0.00136
+09:54:51 No Vehicle: 0.00137
+09:54:51 Crowding: 0.00143
