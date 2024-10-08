@@ -158,8 +158,8 @@ def plot_feature_importance(yearly_shap_values):
     # Plot the SHAP feature importance over the years
     ax = yearly_shap_values_df.plot(kind='barh', figsize=(12, 8), legend=True, color=colors)
 
-    plt.title('Shapley Feature Importance', fontweight='bold')
-    plt.xlabel('Mean |SHAP Value|', fontweight='bold')
+    plt.title('Autoencoder Feature Importance', fontweight='bold')
+    plt.xlabel('Feature Importance (SHAP Value)', fontweight='bold')
     plt.legend(title='Year', bbox_to_anchor=(1, 0), loc='lower right')
 
     # Adjust layout and save
