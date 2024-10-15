@@ -135,6 +135,9 @@ def plot_comparison_heat_map(shape_2020, shape_2022, year):
     sm.set_array([])
     cbar = fig.colorbar(sm, ax=axes, orientation='horizontal', fraction=0.05, pad=0.1)
 
+    # Add label to the colorbar
+    cbar.set_label('Mortality Rates', fontsize=12, weight='bold')
+
     # Customize tick labels 
     tick_values = np.linspace(vmin, vmax, 5)  # Adjust number of ticks if needed
     tick_labels = [f'{val:.2f}' for val in tick_values]

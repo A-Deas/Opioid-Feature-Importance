@@ -44,7 +44,7 @@ def construct_histogram(mort_df, preds_df, year):
 
     plt.figure(figsize=(8, 6))
     plt.hist(errors, bins=50, edgecolor='black')
-    plt.xlabel('Absolute Error', fontsize=12, weight='bold')
+    plt.xlabel('Autoencoder Absolute Error', fontsize=12, weight='bold')
     plt.ylabel('Frequency', fontsize=12, weight='bold')
 
     if year >= 2021:
