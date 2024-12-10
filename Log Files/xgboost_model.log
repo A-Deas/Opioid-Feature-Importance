@@ -1,14 +1,14 @@
-09:52:47 Average Feature Importance for each variable:
-09:52:47 Aged 17 or Younger: 0.0599
-09:52:47 Below Poverty: 0.0607
-09:52:47 Crowding: 0.0642
-09:52:47 Group Quarters: 0.0658
-09:52:47 Mobile Homes: 0.0680
-09:52:47 Limited English Ability: 0.0697
-09:52:47 No Vehicle: 0.0711
-09:52:47 Aged 65 or Older: 0.0717
-09:52:47 Multi-Unit Structures: 0.0729
-09:52:47 No High School Diploma: 0.0730
-09:52:47 Single-Parent Household: 0.0771
-09:52:47 Minority Status: 0.0814
-09:52:47 Unemployment: 0.1585
+12:21:10 Average Feature Importance for each variable:
+12:21:10 Unemployment: 0.1585
+12:21:10 Minority Status: 0.0814
+12:21:10 Single-Parent Household: 0.0771
+12:21:10 No High School Diploma: 0.0730
+12:21:10 Multi-Unit Structures: 0.0729
+12:21:10 Aged 65 or Older: 0.0717
+12:21:10 No Vehicle: 0.0711
+12:21:10 Limited English Ability: 0.0697
+12:21:10 Mobile Homes: 0.0680
+12:21:10 Group Quarters: 0.0658
+12:21:10 Crowding: 0.0642
+12:21:10 Below Poverty: 0.0607
+12:21:10 Aged 17 or Younger: 0.0599

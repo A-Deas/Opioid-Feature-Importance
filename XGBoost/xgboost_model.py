@@ -107,23 +107,41 @@ def plot_feature_importance(feature_importance_df):
     # Sort the DataFrame by the average importance
     feature_importance_df = feature_importance_df.sort_values(by='Average', ascending=True)
 
-    # Color the bars on the importance plot
-    num_years = len(feature_importance_df.columns) - 1  # Exclude 'Average'
+    # Get the variables (features) and years (columns)
+    features = feature_importance_df.index
+    years = feature_importance_df.columns
+
+    # Define bar width and positions for each group
+    bar_width = 0.6
+    y_positions = np.arange(len(features))  # Spacing between feature groups
+
+    # Define colors
+    num_years = len(years) - 1  # Exclude 'Average'
     colors = list(plt.cm.tab20.colors[:num_years]) + ['black']  # Add black for 'Average'
 
-    # Plot the feature importance over the years
-    ax = feature_importance_df.plot(kind='barh', figsize=(12, 8), legend=True, color=colors)
+    # Create figure and axis
+    fig, ax = plt.subplots(figsize=(12, 8))
 
-    plt.title('XGBoost Feature Importance', fontweight='bold')
-    plt.xlabel('Feature Importance (Gain)', fontweight='bold')
-    plt.legend(title='Year', bbox_to_anchor=(1, 0), loc='lower right')
-    
+    # Plot each year's bars
+    for i, year in enumerate(years):
+        ax.barh(y_positions - i * bar_width / num_years, feature_importance_df[year],
+                height=bar_width / num_years, label=year, color=colors[i])
+
+    # Adjust labels, title, and legend
+    ax.set_yticks(y_positions)
+    ax.set_yticklabels(features, fontsize=20)
+    ax.set_xlabel('Feature Importance (Gain)', fontsize=20, fontweight='bold')
+    ax.tick_params(axis='x', labelsize=20)  # Increase the font size of x-axis tick labels
+    ax.set_title('XGBoost Feature Importance', fontsize=20, fontweight='bold')
+    ax.legend(title='Year', fontsize=15, title_fontsize=15, loc='lower right')
+
     # Adjust layout and save
     plt.tight_layout()
     plt.savefig('Feature Importance/xgboost_feature_importance.png', bbox_inches='tight')
     plt.close()
 
     # Log the average feature importance for each variable
+    feature_importance_df = feature_importance_df.sort_values(by='Average', ascending=False)
     logging.info("Average Feature Importance for each variable:")
     for feature, avg_importance in feature_importance_df['Average'].items():
         logging.info(f"{feature}: {avg_importance:.4f}")
