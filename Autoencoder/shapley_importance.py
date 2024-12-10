@@ -155,12 +155,28 @@ def plot_feature_importance(yearly_shap_values):
     num_years = len(DATA_YEARS)
     colors = list(plt.cm.tab20.colors[:num_years]) + ['black']  # Add black for 'Average'
 
-    # Plot the SHAP feature importance over the years
-    ax = yearly_shap_values_df.plot(kind='barh', figsize=(12, 8), legend=True, color=colors)
+    # Define bar width and positions for each group
+    bar_width = 0.6
+    y_positions = np.arange(len(yearly_shap_values_df.index))  # Spacing between feature groups
 
-    plt.title('Autoencoder Feature Importance', fontweight='bold')
-    plt.xlabel('Feature Importance (SHAP Value)', fontweight='bold')
-    plt.legend(title='Year', bbox_to_anchor=(1, 0), loc='lower right')
+    # Create figure and axis
+    fig, ax = plt.subplots(figsize=(12, 8))
+
+    # Plot each year's bars
+    for i, year in enumerate(yearly_shap_values_df.columns):
+        ax.barh(y_positions - i * bar_width / len(yearly_shap_values_df.columns), 
+                yearly_shap_values_df[year], 
+                height=bar_width / len(yearly_shap_values_df.columns), 
+                label=year, 
+                color=colors[i])
+
+    # Adjust labels, title, and legend
+    ax.set_yticks(y_positions)
+    ax.set_yticklabels(yearly_shap_values_df.index, fontsize=20)
+    ax.set_xlabel('Feature Importance (SHAP Value)', fontsize=20, fontweight='bold')
+    ax.tick_params(axis='x', labelsize=15)  # Increase x-axis tick label size
+    ax.set_title('Autoencoder Feature Importance', fontsize=20, fontweight='bold')
+    ax.legend(title='Year', fontsize=15, title_fontsize=15, loc='lower right')
 
     # Adjust layout and save
     plt.tight_layout()
@@ -168,6 +184,7 @@ def plot_feature_importance(yearly_shap_values):
     plt.close()
 
     # Log the average SHAP value for each variable
+    yearly_shap_values_df = yearly_shap_values_df.sort_values(by='Average', ascending=False)
     logging.info("Average SHAP Value for each variable:")
     for feature, avg_shap in yearly_shap_values_df['Average'].items():
         logging.info(f"{feature}: {avg_shap:.5f}")
