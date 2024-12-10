@@ -123,16 +123,35 @@ def hot_anomaly_summary(hot_means_by_year):
     for feature, mean in hot_means_df_flipped_for_printing['Average'].items():
         logging.info(f"{feature}: {mean:.2f}")
 
-    # Color the bars on the importance plot
+    # Plot customization
     num_years = len(hot_means_by_year)
     colors = list(plt.cm.tab20.colors[:num_years]) + ['black']  # Add black for the 'Average' column
 
-    # Plot the means over the years
-    ax = hot_means_df.plot(kind='barh', figsize=(12, 8), legend=True, color=colors)
+    # Create figure and axis
+    fig, ax = plt.subplots(figsize=(12, 8))
 
-    plt.title('Mean Rates of SVI Variables in the Hot Counties', fontweight='bold')
-    plt.xlabel('Mean Value', fontweight='bold')
-    plt.legend(title='Year', bbox_to_anchor=(1, 0), loc='lower right')
+    # Get the variables (rows) and years (columns)
+    variables = hot_means_df.index
+    years = hot_means_df.columns
+
+    # Define bar width and positions for each group
+    bar_width = 0.6
+    y_positions = np.arange(len(variables))  # Spacing between variable groups
+
+    # Plot each year's bars
+    for i, year in enumerate(years):
+        ax.barh(y_positions - i * bar_width / num_years, hot_means_df[year], 
+                height=bar_width / num_years, label=year, color=colors[i])
+
+    # Adjust labels, title, and legend
+    ax.set_yticks(y_positions)
+    ax.set_yticklabels(variables, fontsize=20)
+    ax.set_xlabel('Mean Value', fontsize=20, fontweight='bold')
+    ax.tick_params(axis='x', labelsize=20)  # Increase the font size of x-axis tick labels
+    ax.set_title('Mean Rates of SVI Variables in the Hot Counties', fontsize=20, fontweight='bold')
+    ax.legend(title='Year', fontsize=13, title_fontsize=13, loc='lower right')
+
+    # Maintain whitespace between groups by tweaking spacing
     plt.tight_layout()
     plt.savefig('Feature Importance/hot_anomaly_summary.png', bbox_inches='tight')
     plt.close()
@@ -153,16 +172,35 @@ def cold_anomaly_summary(cold_means_by_year):
     for feature, mean in cold_means_df_flipped_for_printing['Average'].items():
         logging.info(f"{feature}: {mean:.2f}")
 
-    # Color the bars on the importance plot
+    # Plot customization
     num_years = len(cold_means_by_year)
     colors = list(plt.cm.tab20.colors[:num_years]) + ['black']  # Add black for the 'Average' column
 
-    # Plot the means over the years
-    ax = cold_means_df.plot(kind='barh', figsize=(12, 8), legend=True, color=colors)
+    # Create figure and axis
+    fig, ax = plt.subplots(figsize=(12, 8))
 
-    plt.title('Mean Rates of SVI Variables in the Cold Counties', fontweight='bold')
-    plt.xlabel('Mean Value', fontweight='bold')
-    plt.legend(title='Year', bbox_to_anchor=(1, 1), loc='upper right')
+    # Get the variables (rows) and years (columns)
+    variables = cold_means_df.index
+    years = cold_means_df.columns
+
+    # Define bar width and positions for each group
+    bar_width = 0.6
+    y_positions = np.arange(len(variables))  # Spacing between variable groups
+
+    # Plot each year's bars
+    for i, year in enumerate(years):
+        ax.barh(y_positions - i * bar_width / num_years, cold_means_df[year], 
+                height=bar_width / num_years, label=year, color=colors[i])
+
+    # Adjust labels, title, and legend
+    ax.set_yticks(y_positions)
+    ax.set_yticklabels(variables, fontsize=20)
+    ax.set_xlabel('Mean Value', fontsize=20, fontweight='bold')
+    ax.tick_params(axis='x', labelsize=20)  # Increase the font size of x-axis tick labels
+    ax.set_title('Mean Rates of SVI Variables in the Cold Counties', fontsize=20, fontweight='bold')
+    ax.legend(title='Year', fontsize=15, title_fontsize=15, loc='upper right')
+
+    # Maintain whitespace between groups by tweaking spacing
     plt.tight_layout()
     plt.savefig('Feature Importance/cold_anomaly_summary.png', bbox_inches='tight')
     plt.close()
