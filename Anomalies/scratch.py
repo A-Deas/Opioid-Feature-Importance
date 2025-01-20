@@ -1,12 +1,19 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import lognorm
+from scipy.stats import lognorm, gamma, weibull_min, invgauss, kstest
+import logging
 
 # Constants
 MORTALITY_PATH = 'Data/Mortality/Final Files/Mortality_final_rates.csv'
 MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality Rates' for year in range(2010, 2023)]
-TAIL = 3  # Tails for anomaly detection
+
+# Set up logging
+log_file = 'Log Files/distribution_fit_tests.log'
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%H:%M:%S', handlers=[
+    logging.FileHandler(log_file, mode='w'),  # Overwrite the log file
+    logging.StreamHandler()
+])
+
 
 def load_mort_rates():
     mort_df = pd.read_csv(MORTALITY_PATH, header=0, names=MORTALITY_NAMES)
@@ -15,46 +22,63 @@ def load_mort_rates():
     mort_df = mort_df.sort_values(by='FIPS').reset_index(drop=True)
     return mort_df
 
-def count_zero_values(mort_df, year):
-    zero_count = (mort_df[f'{year} Mortality Rates'] == 0).sum()
-    print(f'Year {year}: {zero_count} counties have zero mortality rates.')
+def test_goodness_of_fit(mort_df, year):
+    """Tests goodness-of-fit for lognormal, gamma, and Weibull distributions using KS, AIC, and BIC."""
 
-def fit_distribution(mort_df, year):
     # Get the mortality data for the selected year
     mort_rates = mort_df[f'{year} Mortality Rates'].values
-    non_zero_mort_rates = mort_rates[mort_rates > 0]  # Ignore zero values for lognormal fit
+    non_zero_mort_rates = mort_rates[mort_rates > 0]  # Ignore zero values for fitting
 
-    # Fit the lognormal distribution to the non-zero mortality rates
-    log_shape, loc, scale = lognorm.fit(non_zero_mort_rates)
-    
-    # Generate points for the fitted lognormal distribution
-    x_vals = np.linspace(non_zero_mort_rates.min(), non_zero_mort_rates.max(), 1000)
-    pdf_vals = lognorm.pdf(x_vals, log_shape, loc=loc, scale=scale)
-    
-    # Plot the actual data points as a scatter plot
-    plt.figure(figsize=(10, 6))
-    plt.scatter(non_zero_mort_rates, np.zeros_like(non_zero_mort_rates), alpha=0.6, color='b', label='Mortality Data', marker='o')
+    # Function to calculate AIC and BIC
+    def calculate_aic_bic(log_likelihood, num_params, n):
+        aic = 2 * num_params - 2 * log_likelihood
+        bic = num_params * np.log(n) - 2 * log_likelihood
+        return aic, bic
 
-    # Plot the fitted lognormal distribution
-    plt.plot(x_vals, pdf_vals, 'r-', lw=3, label=f'Fitted Lognormal\nShape: {log_shape:.2f}, Loc: {loc:.2f}, Scale: {scale:.2f}')
-    
-    # Add labels and title
-    plt.title(f'{year} Mortality Rates and Fitted Lognormal Distribution', size=16)
-    plt.xlabel('Mortality Rate', size=14)
-    plt.ylabel('Density', size=14)
-    
-    # Add a legend
-    plt.legend(loc='upper right')
-    
-    # Save the plot
-    plt.show()
+    # Initialize results dictionary
+    results = {}
+
+    # Lognormal distribution
+    log_shape, log_loc, log_scale = lognorm.fit(non_zero_mort_rates)
+    log_likelihood = np.sum(lognorm.logpdf(non_zero_mort_rates, log_shape, loc=log_loc, scale=log_scale))
+    ks_stat, ks_p = kstest(non_zero_mort_rates, 'lognorm', args=(log_shape, log_loc, log_scale))
+    aic, bic = calculate_aic_bic(log_likelihood, 3, len(non_zero_mort_rates))
+    results['Lognormal'] = {'KS Stat': ks_stat, 'p-value': ks_p, 'AIC': aic, 'BIC': bic}
+
+    # Gamma distribution
+    gamma_shape, gamma_loc, gamma_scale = gamma.fit(non_zero_mort_rates, floc=0)
+    log_likelihood = np.sum(gamma.logpdf(non_zero_mort_rates, gamma_shape, loc=gamma_loc, scale=gamma_scale))
+    ks_stat, ks_p = kstest(non_zero_mort_rates, 'gamma', args=(gamma_shape, gamma_loc, gamma_scale))
+    aic, bic = calculate_aic_bic(log_likelihood, 3, len(non_zero_mort_rates))
+    results['Gamma'] = {'KS Stat': ks_stat, 'p-value': ks_p, 'AIC': aic, 'BIC': bic}
+
+    # Weibull distribution
+    weibull_shape, weibull_loc, weibull_scale = weibull_min.fit(non_zero_mort_rates, floc=0)
+    log_likelihood = np.sum(weibull_min.logpdf(non_zero_mort_rates, weibull_shape, loc=weibull_loc, scale=weibull_scale))
+    ks_stat, ks_p = kstest(non_zero_mort_rates, 'weibull_min', args=(weibull_shape, weibull_loc, weibull_scale))
+    aic, bic = calculate_aic_bic(log_likelihood, 3, len(non_zero_mort_rates))
+    results['Weibull'] = {'KS Stat': ks_stat, 'p-value': ks_p, 'AIC': aic, 'BIC': bic}
+
+    # Inverse Gaussian distribution
+    invgauss_shape, invgauss_loc, invgauss_scale = invgauss.fit(non_zero_mort_rates, floc=0)
+    log_likelihood = np.sum(invgauss.logpdf(non_zero_mort_rates, invgauss_shape, loc=invgauss_loc, scale=invgauss_scale))
+    ks_stat, ks_p = kstest(non_zero_mort_rates, 'invgauss', args=(invgauss_shape, invgauss_loc, invgauss_scale))
+    aic, bic = calculate_aic_bic(log_likelihood, 3, len(non_zero_mort_rates))
+    results['Inverse Gaussian'] = {'KS Stat': ks_stat, 'p-value': ks_p, 'AIC': aic, 'BIC': bic}
+
+    # Print results
+    logging.info(f"Year {year} - Goodness-of-Fit Tests:")
+    for dist, metrics in results.items():
+        logging.info(f"  {dist} Distribution:")
+        logging.info(f"    KS Stat = {metrics['KS Stat']:.4f}, p-value = {metrics['p-value']:.4f}")
+        logging.info(f"    AIC = {metrics['AIC']:.2f}, BIC = {metrics['BIC']:.2f}\n")
 
 def main():
     mort_df = load_mort_rates()
 
+    # Test distributions for each year
     for year in range(2010, 2023):
-        count_zero_values(mort_df, year)
-        fit_distribution(mort_df, year)
+        test_goodness_of_fit(mort_df, year)
 
 if __name__ == "__main__":
     main()
