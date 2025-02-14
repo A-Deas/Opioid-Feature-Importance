@@ -2,6 +2,7 @@ import geopandas as gpd
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.colors as mcolors
 from matplotlib.colors import BoundaryNorm
 from matplotlib.cm import ScalarMappable
 import warnings
@@ -25,6 +26,32 @@ def load_final_data():
 def merge_data_shape(shape, mort_df):
     shape = shape.merge(mort_df, on='FIPS')
     return shape
+
+def custom_colormap():
+    """
+    Construct a custom RdYlBu colormap using colorbrewer to ensure a colorblind-friendly color 
+    scheme.
+    """
+
+    # Define the CSS RdYlBu color scheme manually (css copied from colorbrewer)
+    css_RdYlBu_colors = [
+        (165/255, 0/255, 38/255),    # Dark Red
+        (215/255, 48/255, 39/255),
+        (244/255, 109/255, 67/255),
+        (253/255, 174/255, 97/255),
+        (254/255, 224/255, 144/255), # Light Orange
+        (255/255, 255/255, 191/255), # Yellow (Neutral)
+        (224/255, 243/255, 248/255), # Light Blue
+        (171/255, 217/255, 233/255),
+        (116/255, 173/255, 209/255),
+        (69/255, 117/255, 180/255),
+        (49/255, 54/255, 149/255)    # Dark Blue
+    ]
+
+    # Create the custom colormap
+    custom_RdYlBu = mcolors.LinearSegmentedColormap.from_list("customRdYlBu", css_RdYlBu_colors, N=256)
+    cmap = custom_RdYlBu.reversed()  # Reverse so that blue is low and red is high
+    return cmap
 
 def plot_heat_map(shape, year):
     fig, main_ax = plt.subplots(figsize=(10, 5))
@@ -57,8 +84,8 @@ def plot_heat_map(shape, year):
     percentiles = np.percentile(yearly_data, np.arange(0, 101, 1))
 
     # Color the maps
-    cmap = plt.get_cmap('RdYlBu_r')
-
+    cmap = custom_colormap()
+  
     for inset, ax, _ in shapes:
         for _, row in inset.iterrows():
             county = row['FIPS']
@@ -97,7 +124,7 @@ def set_view_window(main_ax,alaska_ax,hawaii_ax):
 
 def add_color_bar(main_ax):
     # Get the colormap
-    cmap = plt.get_cmap('RdYlBu_r')
+    cmap = custom_colormap()
     
     # Define color bounds and normalization
     color_bounds = np.linspace(0, 1, 21)  # 21 points for 0%, 5%, ..., 100%
