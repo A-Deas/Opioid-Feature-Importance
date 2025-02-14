@@ -41,7 +41,7 @@ dependencies:
   - gdal=3.6.2
   - geopandas=0.14.2
   - geopandas-base=0.14.2
-  - geos=3.8.0
+  - geos
   - geotiff=1.7.0
   - gettext=0.21.0
   - giflib=5.2.1
