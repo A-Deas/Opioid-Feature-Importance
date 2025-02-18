@@ -97,6 +97,11 @@ def construct_accuracy_map(shape, year):
             color = cmap(acc)
             inset[inset['FIPS'] == county].plot(ax=ax, color=color)
 
+    # Plot county boundaries with thin black lines
+    shape.boundary.plot(ax=main_ax, edgecolor='black', linewidth=0.1)
+    shape[shape['STATEFP'] == '02'].boundary.plot(ax=alaska_ax, edgecolor='black', linewidth=0.1)
+    shape[shape['STATEFP'] == '15'].boundary.plot(ax=hawaii_ax, edgecolor='black', linewidth=0.1)
+
     # Adjust the viewing
     set_view_window(main_ax,alaska_ax,hawaii_ax)
 

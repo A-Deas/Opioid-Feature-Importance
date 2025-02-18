@@ -1,6 +1,7 @@
 import geopandas as gpd
 import pandas as pd
 import matplotlib.pyplot as plt
+plt.rcParams['hatch.linewidth'] = .3  # previous svg hatch linewidth
 import numpy as np
 import matplotlib.colors as mcolors
 from matplotlib.colors import BoundaryNorm
@@ -99,10 +100,30 @@ def plot_heat_map(shape, year):
                 
                 # Map the percentile (0 to 1) to a color
                 color = cmap(percentile_rank)
+                inset[inset['FIPS'] == county].plot(ax=ax, color=color)
             else:
-                color = 'black'  # For zero or negative values
-            
-            inset[inset['FIPS'] == county].plot(ax=ax, color=color)
+                # For zero or negative values (missing data)
+                # Extract the county as a GeoDataFrame
+                missing_county = gpd.GeoDataFrame([row], geometry='geometry')
+                # First layer: Fill counties with light grey (no edges)
+                missing_county.plot(ax=ax, color='lightgrey', edgecolor='none')
+                # Second layer: Apply hatching separately to each county
+                missing_county.plot(ax=ax, facecolor='none', edgecolor='black', hatch='//////', linewidth=0)
+
+
+
+                # # First layer: Fill counties with light grey (no edges)
+                # # inset[inset['FIPS'] == county].plot(ax=ax, color='black', edgecolor='none')
+                # inset[inset['FIPS'] == county].plot(ax=ax, color='lightgrey', edgecolor='none')
+
+                # # Second layer: Add only hatching (no background, no borders)
+                # # inset[inset['FIPS'] == county].plot(ax=ax, facecolor='none', edgecolor='white', hatch='//', linewidth=0)
+                # inset[inset['FIPS'] == county].plot(ax=ax, facecolor='none', edgecolor='black', hatch='//', linewidth=0, alpha=0.5)
+
+    # Plot county boundaries with thin black lines
+    shape.boundary.plot(ax=main_ax, edgecolor='black', linewidth=0.1)
+    shape[shape['STATEFP'] == '02'].boundary.plot(ax=alaska_ax, edgecolor='black', linewidth=0.1)
+    shape[shape['STATEFP'] == '15'].boundary.plot(ax=hawaii_ax, edgecolor='black', linewidth=0.1)
 
     # Adjust the viewing
     set_view_window(main_ax,alaska_ax,hawaii_ax)
@@ -150,7 +171,8 @@ def add_color_bar(main_ax):
     cbar.set_label('Percentiles', fontsize=10, weight='bold')
 
 def add_legend(main_ax):
-    black_patch = mpatches.Patch(color='black', label='Missing Data')
+    # black_patch = mpatches.Rectangle((0, 0), 1, 1, facecolor='black', edgecolor='white', linewidth=0.5, hatch='///', label='Missing Data')
+    black_patch = mpatches.Rectangle((0, 0), 1, 1, facecolor='lightgrey', edgecolor='black', linewidth=0.5, hatch='//////', label='Missing Data')
     main_ax.legend(handles=[black_patch], loc='lower right', bbox_to_anchor=(1, 0))
 
 def main():
