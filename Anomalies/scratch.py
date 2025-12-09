@@ -1,84 +1,61 @@
 import pandas as pd
 import numpy as np
-from scipy.stats import lognorm, gamma, weibull_min, invgauss, kstest
 import logging
 
 # Constants
 MORTALITY_PATH = 'Data/Mortality/Final Files/Mortality_final_rates.csv'
 MORTALITY_NAMES = ['FIPS'] + [f'{year} Mortality Rates' for year in range(2010, 2023)]
+LOW_THRESH = 2
+HIGH_TRESH = 98
 
 # Set up logging
-log_file = 'Log Files/distribution_fit_tests.log'
+log_file = 'Log Files/empirical_anomaly_investigation.log'
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%H:%M:%S', handlers=[
-    logging.FileHandler(log_file, mode='w'),  # Overwrite the log file
+    logging.FileHandler(log_file, mode='w'),
     logging.StreamHandler()
 ])
 
-
 def load_mort_rates():
     mort_df = pd.read_csv(MORTALITY_PATH, header=0, names=MORTALITY_NAMES)
-    mort_df['FIPS'] = mort_df['FIPS'].astype(str).str.zfill(5)  # Pad FIPS codes with leading zeros
+    mort_df['FIPS'] = mort_df['FIPS'].astype(str).str.zfill(5)
     mort_df[MORTALITY_NAMES[1:]] = mort_df[MORTALITY_NAMES[1:]].astype(float)
     mort_df = mort_df.sort_values(by='FIPS').reset_index(drop=True)
     return mort_df
 
-def test_goodness_of_fit(mort_df, year):
-    """Tests goodness-of-fit for lognormal, gamma, and Weibull distributions using KS, AIC, and BIC."""
+def compute_empirical_anomalies(mort_df, year):
+    """Flags anomalies based on empirical distribution percentiles including 0s."""
+    col = f'{year} Mortality Rates'
+    rates = mort_df[col].values
 
-    # Get the mortality data for the selected year
-    mort_rates = mort_df[f'{year} Mortality Rates'].values
-    non_zero_mort_rates = mort_rates[mort_rates > 0]  # Ignore zero values for fitting
+    # Compute and print percentiles from 0% to 100% in 5% increments
+    percentiles = np.arange(0, 105, 5)
+    values = np.percentile(rates, percentiles)
 
-    # Function to calculate AIC and BIC
-    def calculate_aic_bic(log_likelihood, num_params, n):
-        aic = 2 * num_params - 2 * log_likelihood
-        bic = num_params * np.log(n) - 2 * log_likelihood
-        return aic, bic
+    logging.info(f"\n📊 Percentile Summary for {year}:")
+    for p, val in zip(percentiles, values):
+        logging.info(f"  {p:3d}th percentile = {val:.2f}")
 
-    # Initialize results dictionary
-    results = {}
+    low_cutoff = np.percentile(rates, LOW_THRESH)
+    high_cutoff = np.percentile(rates, HIGH_TRESH)
 
-    # Lognormal distribution
-    log_shape, log_loc, log_scale = lognorm.fit(non_zero_mort_rates)
-    log_likelihood = np.sum(lognorm.logpdf(non_zero_mort_rates, log_shape, loc=log_loc, scale=log_scale))
-    ks_stat, ks_p = kstest(non_zero_mort_rates, 'lognorm', args=(log_shape, log_loc, log_scale))
-    aic, bic = calculate_aic_bic(log_likelihood, 3, len(non_zero_mort_rates))
-    results['Lognormal'] = {'KS Stat': ks_stat, 'p-value': ks_p, 'AIC': aic, 'BIC': bic}
+    anomaly_labels = np.zeros(len(rates), dtype=int)
+    anomaly_labels[rates <= low_cutoff] = -1  # cold anomaly
+    anomaly_labels[rates >= high_cutoff] = 1   # hot anomaly
 
-    # Gamma distribution
-    gamma_shape, gamma_loc, gamma_scale = gamma.fit(non_zero_mort_rates, floc=0)
-    log_likelihood = np.sum(gamma.logpdf(non_zero_mort_rates, gamma_shape, loc=gamma_loc, scale=gamma_scale))
-    ks_stat, ks_p = kstest(non_zero_mort_rates, 'gamma', args=(gamma_shape, gamma_loc, gamma_scale))
-    aic, bic = calculate_aic_bic(log_likelihood, 3, len(non_zero_mort_rates))
-    results['Gamma'] = {'KS Stat': ks_stat, 'p-value': ks_p, 'AIC': aic, 'BIC': bic}
+    mort_df[f'{year} Anomaly Label'] = anomaly_labels
 
-    # Weibull distribution
-    weibull_shape, weibull_loc, weibull_scale = weibull_min.fit(non_zero_mort_rates, floc=0)
-    log_likelihood = np.sum(weibull_min.logpdf(non_zero_mort_rates, weibull_shape, loc=weibull_loc, scale=weibull_scale))
-    ks_stat, ks_p = kstest(non_zero_mort_rates, 'weibull_min', args=(weibull_shape, weibull_loc, weibull_scale))
-    aic, bic = calculate_aic_bic(log_likelihood, 3, len(non_zero_mort_rates))
-    results['Weibull'] = {'KS Stat': ks_stat, 'p-value': ks_p, 'AIC': aic, 'BIC': bic}
-
-    # Inverse Gaussian distribution
-    invgauss_shape, invgauss_loc, invgauss_scale = invgauss.fit(non_zero_mort_rates, floc=0)
-    log_likelihood = np.sum(invgauss.logpdf(non_zero_mort_rates, invgauss_shape, loc=invgauss_loc, scale=invgauss_scale))
-    ks_stat, ks_p = kstest(non_zero_mort_rates, 'invgauss', args=(invgauss_shape, invgauss_loc, invgauss_scale))
-    aic, bic = calculate_aic_bic(log_likelihood, 3, len(non_zero_mort_rates))
-    results['Inverse Gaussian'] = {'KS Stat': ks_stat, 'p-value': ks_p, 'AIC': aic, 'BIC': bic}
-
-    # Print results
-    logging.info(f"Year {year} - Goodness-of-Fit Tests:")
-    for dist, metrics in results.items():
-        logging.info(f"  {dist} Distribution:")
-        logging.info(f"    KS Stat = {metrics['KS Stat']:.4f}, p-value = {metrics['p-value']:.4f}")
-        logging.info(f"    AIC = {metrics['AIC']:.2f}, BIC = {metrics['BIC']:.2f}\n")
+    logging.info(f"Year {year}: Low cutoff is {low_cutoff:.2f}, high cutoff is {high_cutoff:.2f}")
+    logging.info(f"  Cold anomalies: {(anomaly_labels == -1).sum()}")
+    logging.info(f"  Hot anomalies:  {(anomaly_labels == 1).sum()}")
+    return mort_df
 
 def main():
     mort_df = load_mort_rates()
 
-    # Test distributions for each year
     for year in range(2010, 2023):
-        test_goodness_of_fit(mort_df, year)
+        mort_df = compute_empirical_anomalies(mort_df, year)
+
+    logging.info("Anomaly detection completed and saved.")
 
 if __name__ == "__main__":
     main()

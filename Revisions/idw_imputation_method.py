@@ -1,4 +1,24 @@
 import pandas as pd
+import geopandas as gpd
+from shapely.geometry import Point
+from geopy.distance import geodesic
+
+def load_centroids(shapefile_path='2020 USA County Shapefile/TIGERLine Files/cb_2020_us_county_20m.shp'):
+    gdf = gpd.read_file(shapefile_path)
+    gdf['FIPS'] = gdf['STATEFP'] + gdf['COUNTYFP']
+    gdf['FIPS'] = gdf['FIPS'].astype(str).str.zfill(5)
+
+    # Reproject to a projected CRS for accurate centroid calculation
+    gdf = gdf.to_crs(epsg=5070)
+    gdf['centroid_geom'] = gdf.geometry.centroid
+
+    # Convert to WGS84 for geodesic
+    gdf = gdf.set_geometry('centroid_geom').to_crs(epsg=4326)
+
+    # Store coordinates as (lat, lon) tuples
+    gdf['centroid'] = gdf.geometry.apply(lambda p: (p.y, p.x))
+
+    return dict(zip(gdf['FIPS'], gdf['centroid']))
 
 def load_neighbors():
     neighs_path = 'Data/Neighbors/2020_neighbors_list.csv'
@@ -23,7 +43,7 @@ def load_yearly_mortality(year):
     mort_df[f'{year} OD'] = mort_df[f'{year} OD'].astype(float)
     return mort_df
 
-def fill_missing_neighbors(mort_df, neighs_df, year, num_missing):
+def fill_missing_neighbors(mort_df, neighs_df, year, num_missing, centroids_dict):
     step_count = 0
     for fips, row in mort_df.iterrows():
         if row[f'{year} OD'] == -9.0:
@@ -33,12 +53,24 @@ def fill_missing_neighbors(mort_df, neighs_df, year, num_missing):
             missing_neighbors = [neighbor for neighbor in neighbors if neighbor in mort_df.index and mort_df.loc[neighbor, f'{year} OD'] == -9]
 
             if len(missing_neighbors) == num_missing and len(available_neighbors) > 0:
-                new_value = sum([mort_df.loc[neighbor, f'{year} OD'] for neighbor in available_neighbors]) / len(available_neighbors)
+                weighted_sum = 0.0
+                total_weight = 0.0
+                for neighbor in available_neighbors:
+                    lat1, lon1 = centroids_dict[fips]
+                    lat2, lon2 = centroids_dict[neighbor]
+                    dist = geodesic((lat1, lon1), (lat2, lon2)).miles
+                    if dist == 0:
+                        dist = 0.1  # Avoid divide-by-zero
+                    weight = 1 / dist
+                    weighted_sum += mort_df.loc[neighbor, f'{year} OD'] * weight
+                    total_weight += weight
+
+                new_value = weighted_sum / total_weight
                 mort_df.loc[fips, f'{year} OD'] = new_value
                 step_count += 1
     return mort_df, step_count
 
-def fill_continental_holes(mort_df, neighs_df, year):
+def fill_continental_holes(mort_df, neighs_df, year, centroids_dict):
     # Fill in continental counties with no missing neighbors
     for fips, row in mort_df.iterrows():
         if row[f'{year} OD'] == -9.0:
@@ -47,11 +79,23 @@ def fill_continental_holes(mort_df, neighs_df, year):
             neighbor_rates = [mort_df.loc[neighbor, f'{year} OD'] for neighbor in neighbors if neighbor in mort_df.index and mort_df.loc[neighbor, f'{year} OD'] != -9]
 
             if len(neighbor_rates) == len(neighbors) and len(neighbor_rates) > 0:  # full neighbor set is available and not empty
-                new_value = sum(neighbor_rates) / len(neighbor_rates)
-                mort_df.at[fips, f'{year} OD'] = new_value
+                weighted_sum = 0.0
+                total_weight = 0.0
+                for neighbor in neighbors:
+                    lat1, lon1 = centroids_dict[fips]
+                    lat2, lon2 = centroids_dict[neighbor]
+                    dist = geodesic((lat1, lon1), (lat2, lon2)).miles
+                    if dist == 0:
+                        dist = 0.1  # Avoid divide-by-zero
+                    weight = 1 / dist
+                    weighted_sum += mort_df.loc[neighbor, f'{year} OD'] * weight
+                    total_weight += weight
+
+                new_value = weighted_sum / total_weight
+                mort_df.loc[fips, f'{year} OD'] = new_value
     return mort_df
 
-def handle_island_counties(mort_df, year):
+def handle_island_counties(mort_df, year, centroids_dict):
     island_fips = ['25019', # Nantucket County, MA
                    '15001', #Hawaii County, HI
                    '15003', # Honolulu County, HI
@@ -70,17 +114,24 @@ def handle_island_counties(mort_df, year):
     # Iterate through each island FIPS code
     for fips in island_fips:
         neighbors = island_neighbors[fips]
-        
-        # Collect mortality rates from valid neighbors
-        neighbor_rates = [mort_df.loc[neighbor, f'{year} OD'] for neighbor in neighbors if neighbor in mort_df.index and mort_df.loc[neighbor, f'{year} OD'] != -9]
-        
-        # Calculate the new value if there are valid neighbors
-        if neighbor_rates:
-            new_value = sum(neighbor_rates) / len(neighbor_rates)
-            mort_df.loc[fips, f'{year} OD'] = new_value
+
+        weighted_sum = 0.0
+        total_weight = 0.0
+        for neighbor in neighbors:
+            lat1, lon1 = centroids_dict[fips]
+            lat2, lon2 = centroids_dict[neighbor]
+            dist = geodesic((lat1, lon1), (lat2, lon2)).miles
+            if dist == 0:
+                dist = 0.1  # Avoid divide-by-zero
+            weight = 1 / dist
+            weighted_sum += mort_df.loc[neighbor, f'{year} OD'] * weight
+            total_weight += weight
+
+        new_value = weighted_sum / total_weight
+        mort_df.loc[fips, f'{year} OD'] = new_value
     return mort_df
 
-def clean_rates(mort_df, neighs_df, year):
+def clean_rates(mort_df, neighs_df, year, centroids_dict):
     mort_df = mort_df.set_index('FIPS')
 
     while True:
@@ -88,7 +139,7 @@ def clean_rates(mort_df, neighs_df, year):
 
         # Fill in counties with exactly one, two, then three missing neighbors
         for num_missing in [1, 2, 3]:
-            mort_df, step_count = fill_missing_neighbors(mort_df, neighs_df, year, num_missing)
+            mort_df, step_count = fill_missing_neighbors(mort_df, neighs_df, year, num_missing, centroids_dict)
             count += step_count
 
         # Once all categories have been properly dealt with, break the loop
@@ -96,10 +147,10 @@ def clean_rates(mort_df, neighs_df, year):
             break
 
     # Final steps: fill in the continental holes (counties with no missing neighbors)
-    mort_df = fill_continental_holes(mort_df, neighs_df, year)
+    mort_df = fill_continental_holes(mort_df, neighs_df, year, centroids_dict)
 
     # Final steps: handle the islands
-    mort_df = handle_island_counties(mort_df, year)
+    mort_df = handle_island_counties(mort_df, year, centroids_dict)
 
     # Round the mortality rates to two decimal places
     # clip any negative values
@@ -111,10 +162,11 @@ def clean_rates(mort_df, neighs_df, year):
 def main():
     neighs_df = load_neighbors()
     combined_df = pd.DataFrame()
+    centroids_dict = load_centroids()
 
     for year in range(2014, 2021):
         mort_df = load_yearly_mortality(year)
-        mort_df = clean_rates(mort_df, neighs_df, year)
+        mort_df = clean_rates(mort_df, neighs_df, year, centroids_dict)
 
         # Merge the cleaned rates into the combined DataFrame
         if combined_df.empty:
@@ -123,7 +175,7 @@ def main():
             combined_df = pd.merge(combined_df, mort_df, on='FIPS', how='outer')
 
     # Save the combined DataFrame with all yearly mortality rates
-    output_path = 'Revisions/Hepvu Data/Imputed Data/hepvu_mort_rates_neighbor_imputation.csv'
+    output_path = 'Revisions/Hepvu Data/Imputed Data/hepvu_mort_rates_idw_imputation.csv'
     combined_df.to_csv(output_path, index=False)
     print('Final mortality rates saved.')
 

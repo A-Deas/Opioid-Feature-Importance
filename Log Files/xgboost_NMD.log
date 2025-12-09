@@ -1,0 +1,26 @@
+16:22:14 2011: Using 1480/3144 counties with observed mortality.
+16:22:15 2012: Using 1477/3144 counties with observed mortality.
+16:22:16 2013: Using 1463/3144 counties with observed mortality.
+16:22:18 2014: Using 1492/3144 counties with observed mortality.
+16:22:19 2015: Using 1504/3144 counties with observed mortality.
+16:22:21 2016: Using 1554/3144 counties with observed mortality.
+16:22:22 2017: Using 1553/3144 counties with observed mortality.
+16:22:23 2018: Using 1602/3144 counties with observed mortality.
+16:22:25 2019: Using 1557/3144 counties with observed mortality.
+16:22:26 2020: Using 1638/3144 counties with observed mortality.
+16:22:27 2021: Using 1743/3144 counties with observed mortality.
+16:22:29 2022: Using 1721/3144 counties with observed mortality.
+16:22:30 Average Feature Importance for each variable:
+16:22:30 Unemployment: 0.1595
+16:22:30 Multi-Unit Structures: 0.1200
+16:22:30 Single-Parent Household: 0.0795
+16:22:30 No Vehicle: 0.0710
+16:22:30 Minority Status: 0.0695
+16:22:30 No High School Diploma: 0.0680
+16:22:30 Limited English Ability: 0.0669
+16:22:30 Aged 65 or Older: 0.0655
+16:22:30 Group Quarters: 0.0621
+16:22:30 Crowding: 0.0619
+16:22:30 Mobile Homes: 0.0614
+16:22:30 Below Poverty: 0.0569
+16:22:30 Aged 17 or Younger: 0.0518

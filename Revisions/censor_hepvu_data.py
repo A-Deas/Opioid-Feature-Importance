@@ -7,6 +7,10 @@ np.random.seed(42)
 
 # Load your full dataset (modify path as needed)
 df = pd.read_csv("Revisions/hepvu_mort_rates_real.csv")
+df['FIPS'] = df['FIPS'].astype(str).str.zfill(5)
+for col in df.columns:
+    if col != 'FIPS':
+        df[col] = df[col].astype(float)
 
 # Make a copy to apply censoring
 censored_df = df.copy()
