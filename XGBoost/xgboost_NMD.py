@@ -37,10 +37,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s', datefm
 ])
 
 def get_observed_mask_for_year(year, data_df):
-    """
-    Returns a boolean mask (indexed like data_df) indicating which counties
-    have observed (non-imputed) mortality rates for the given year.
-    """
     year_col = f"{year} MR"
     interim_path = INTERIM_DIR / f"{year}_mortality_interim.csv"
 
