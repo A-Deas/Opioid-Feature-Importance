@@ -4,3 +4,4 @@
 
 # Ignore the map cropping script
 z_map_cropping.py
+.venv/
